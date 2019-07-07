@@ -13,11 +13,12 @@ function formatHelp(command) {
 	var result = '';
 	if (command == '') {
 		for (let [key, value] of Object.entries(helpArray)) {
-			result += key + ': ' + value + '\n';
+			result += '**!' + key + '**: ' + value + '\n';
 		}
 	} else {
-		if (Object.keys(helpArray).find(command) != undefined) {
-			result = '!' + command + ': ' + helpArray[command];
+		console.log(Object.keys(helpArray).indexOf(command), command);
+		if (Object.keys(helpArray).indexOf(command) > -1) {
+			result = '**!' + command + '**: ' + helpArray[command];
 		} else {
 			result = 'That command was not found';
 		}
@@ -32,7 +33,7 @@ bot.on('message', message => {
 	if (message.content.substring(0, 1) == '!') {
 		var args = message.content.substring(1).split(' ');
 		var cmd = args[0];
-	   
+
 		args = args.splice(1);
 		switch(cmd) {
 			// Command: `!help`
@@ -45,7 +46,7 @@ bot.on('message', message => {
 					.setTitle('Heimdall\'s help')
 					.setColor(0xFF0000)
 					.setDescription(
-						formatHelp(message.content.substring(5))
+						formatHelp(message.content.substring(6))
 					);
 				message.channel.send(embed);
 				break;

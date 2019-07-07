@@ -1,5 +1,6 @@
 {
 	"helpArray": {
+		"help": "Ask Heimdall to teach you his ways...",
 		"ping": "Ping Heimdall and hope he honours you with a response.",
 		"say": "Ask Heimdall to say something for you.",
 		"embed": "Ask Heimdall to embed something for you. Anything before a \"-\" is the title, and after it is the description.",
