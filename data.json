@@ -1,0 +1,8 @@
+{
+	"helpArray": {
+		"ping": "Ping Heimdall and hope he honours you with a response.",
+		"say": "Ask Heimdall to say something for you.",
+		"embed": "Ask Heimdall to embed something for you. Anything before a \"-\" is the title, and after it is the description.",
+		"start": "Start a particular service. Services to choose from:\n- `arma`\n- `teamspeak`\n- `reddit`"
+	}
+}
