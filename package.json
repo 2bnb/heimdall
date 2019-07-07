@@ -1,0 +1,28 @@
+{
+  "name": "2bnb-heimdall",
+  "version": "1.0.0",
+  "description": "Guardian of the realm of memes and autists.",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Saborknight/2bnb-heimdall.git"
+  },
+  "keywords": [
+    "discord",
+    "bot",
+    "2bnb"
+  ],
+  "author": "Arend",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/Saborknight/2bnb-heimdall/issues"
+  },
+  "homepage": "https://github.com/Saborknight/2bnb-heimdall#readme",
+  "dependencies": {
+    "discord.io": "https://github.com/woor/discord.io/tarball/gateway_v6",
+    "winston": "^3.2.1"
+  }
+}
