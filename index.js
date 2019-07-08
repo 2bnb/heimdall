@@ -1,4 +1,5 @@
 const {Client, RichEmbed} = require('discord.js');
+const {exec} = require('child_process');
 const config = require('./config.json');
 const data = require('./data.json');
 
@@ -64,6 +65,37 @@ function helpFormat(command) {
 	return result;
 }
 
+function action(message, order, service) {
+	var actions = (require('./data.json')).actions;
+	var action = order + '_' + service;
+
+	if (Object.keys(actions).indexOf(action) > -1) {
+		exec(actions[action], (error, stdout, stderror) => {
+			if (error) {
+				log('error', `[${action}]: ${error}`);
+				message.channel.send(`Error from server:\n\`\`\`\n ${error}\n\`\`\``);
+				return;
+			}
+
+			log('log', `stdout: ${stdout}`);
+			log('log', `stderror: ${stderror}`);
+		});
+
+		result = 'Action has been executed.';
+	} else {
+		result = 'Action does not exist';
+	}
+
+	return result;
+}
+
+function getFlags(string, limit) {
+	if (limit == undefined) { limit = 2 };
+	var flags = string.split(' ', limit);
+	flags.shift();
+	return flags;
+}
+
 bot.on('message', message => {
 	// Our bot needs to know if it will execute a command
 	// It will listen for messages that will start with `!`
@@ -115,8 +147,25 @@ bot.on('message', message => {
 					.setDescription(message.content.substring(message.content.indexOf('-') + 1));
 				message.channel.send(embed);
 				break;
+
+			// Command: `!start`
+			// Description: Start the given service
+			// Use: `!start [service]`
+			// Author: Arend
 			case 'start':
-				var service = message.content.substring(message.content.indexOf(' '));
+				var service = getFlags(message.content)[0];
+				message.channel.send(action(message, 'start', service));
+				break;
+
+			// Command: `!stop`
+			// Description: stop the given service
+			// Use: `!stop [service]`
+			// Author: Arend
+			case 'stop':
+				var service = getFlags(message.content)[0];
+				action(message, 'stop', service);
+				break;
+
 			default:
 				message.channel.send('Speak up you laggard!');
 		 }
