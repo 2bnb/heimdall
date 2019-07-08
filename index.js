@@ -66,7 +66,7 @@ function helpFormat(command) {
 }
 
 function action(message, order, service) {
-	var actions = (require('./data.json')).actions;
+	var actions = config.actions;
 	var action = order + '_' + service;
 
 	if (Object.keys(actions).indexOf(action) > -1) {
