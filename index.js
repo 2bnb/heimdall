@@ -78,7 +78,10 @@ function action(message, order, service) {
 			}
 
 			log('log', `stdout: ${stdout}`);
-			log('log', `stderror: ${stderror}`);
+
+			if (stderror) {
+				log('warn', `stderror: ${stderror}`);
+			}
 		});
 
 		result = 'Action has been executed.';
@@ -102,6 +105,7 @@ bot.on('message', message => {
 	if (message.content.substring(0, 1) == '!') {
 		var args = message.content.substring(1).split(' ');
 		var cmd = args[0];
+		var result = '';
 
 		args = args.splice(1);
 		switch(cmd) {
@@ -118,6 +122,7 @@ bot.on('message', message => {
 						helpFormat(message.content.substring(6))
 					);
 				message.channel.send(embed);
+				result = 'Help given...';
 				break;
 
 			// Command: `!ping`
@@ -125,7 +130,9 @@ bot.on('message', message => {
 			// Use: `!ping`
 			// Author: Arend
 			case 'ping':
-				message.channel.send(data.pongs[Math.floor(Math.random() * (data.pongs.length - 0)) + 0]);
+				var pong = data.pongs[Math.floor(Math.random() * (data.pongs.length - 0)) + 0];
+				message.channel.send(pong);
+				result = `"${pong}" was sent...`;
 				break;
 
 			// Command: `!say`
@@ -134,6 +141,7 @@ bot.on('message', message => {
 			// Author: Arend
 			case 'say':
 				message.channel.send(message.content.substring(4));
+				result = 'Message regurgitated...';
 				break;
 
 			// Command: `!embed`
@@ -146,6 +154,7 @@ bot.on('message', message => {
 					.setColor(0xFF0000)
 					.setDescription(message.content.substring(message.content.indexOf('-') + 1));
 				message.channel.send(embed);
+				result = 'Embedded message sent...';
 				break;
 
 			// Command: `!start`
@@ -155,6 +164,7 @@ bot.on('message', message => {
 			case 'start':
 				var service = getFlags(message.content)[0];
 				message.channel.send(action(message, 'start', service));
+				result = `Action start_${service} executed...`
 				break;
 
 			// Command: `!stop`
@@ -163,12 +173,17 @@ bot.on('message', message => {
 			// Author: Arend
 			case 'stop':
 				var service = getFlags(message.content)[0];
-				action(message, 'stop', service);
+				message.channel.send(action(message, 'stop', service));
+				result = `Action stop_${service} executed...`
 				break;
 
 			default:
 				message.channel.send('Speak up you laggard!');
+				result = `Command \`!${cmd}\` not understood...`;
 		 }
+
+		 log('info', `Command \`!${cmd}\` was called: "${message.content}"`);
+		 log('info', `Command result: ${result}`);
 	 }
 });
 
