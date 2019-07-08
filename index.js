@@ -3,8 +3,44 @@ var auth = require('./auth.json');
 // Initialize Discord Bot
 var bot = new Client();
 
+//////////////////////////////////
+// Console Log wrapper function //
+//////////////////////////////////
+function log(type, message) {
+	if (!type) { type = 'log'; }
+
+	// Colour codes: https://stackoverflow.com/a/41407246/3774356
+	var typeColours = {
+		log: {
+			prepend: '',
+			append: '\x1b[0m'
+		},
+		error: {
+			// Red Foreground then reset
+			prepend: '\x1b[31mError: ',
+			append: '\x1b[0m'
+		},
+		warn: {
+			// Yellow Foreground then reset
+			prepend: '\x1b[33mWarning: ',
+			append: '\x1b[0m'
+		},
+		info: {
+			// Blue Foreground "Info: " then reset before message
+			prepend: '\x1b[34mInfo: \x1b[0m',
+			append: '\x1b[0m'
+		}
+	};
+
+	var date = new Date(Date.now());
+	var timestamp = `${date.getHours()}:${date.getMinutes()}:${date.getSeconds()}`;
+
+	console[type](`[\x1b[36m${timestamp}\x1b[0m] ${typeColours[type].prepend}${message}${typeColours[type].append}`);
+}
+
+
 bot.on('ready', function (evt) {
-	console.log('Bot ready');
+	log('info', 'Bot ready...');
 });
 
 function formatHelp(command) {
@@ -70,7 +106,7 @@ bot.on('message', message => {
 
 			// Command: `!embed`
 			// Description: Display the given content as an embedded message
-			// Use: `!embed The Title goes before - And the Description goes after`
+			// Use: `!embed [title]-[description]`
 			// Author: Arend
 			case 'embed':
 				var embed = new RichEmbed()
