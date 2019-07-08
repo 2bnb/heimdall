@@ -1,5 +1,7 @@
 const {Client, RichEmbed} = require('discord.js');
-var auth = require('./auth.json');
+const config = require('./config.json');
+const data = require('./data.json');
+
 // Initialize Discord Bot
 var bot = new Client();
 
@@ -44,7 +46,7 @@ bot.on('ready', function (evt) {
 });
 
 function helpFormat(command) {
-	var helpArray = (require('./data.json')).helpArray;
+	var helpArray = data.helpArray;
 
 	var result = '';
 	if (command == '') {
@@ -52,7 +54,6 @@ function helpFormat(command) {
 			result += '**!' + key + '**: ' + value + '\n';
 		}
 	} else {
-		console.log(Object.keys(helpArray).indexOf(command), command);
 		if (Object.keys(helpArray).indexOf(command) > -1) {
 			result = '**!' + command + '**: ' + helpArray[command];
 		} else {
@@ -92,8 +93,7 @@ bot.on('message', message => {
 			// Use: `!ping`
 			// Author: Arend
 			case 'ping':
-				var pings = ['Pong!', 'Whoosh!', 'Ouch!'];
-				message.channel.send(pings[Math.floor(Math.random() * (pings.length - 0)) + 0]);
+				message.channel.send(data.pongs[Math.floor(Math.random() * (data.pongs.length - 0)) + 0]);
 				break;
 
 			// Command: `!say`
@@ -123,4 +123,4 @@ bot.on('message', message => {
 	 }
 });
 
-bot.login(auth.token);
+bot.login(config.auth.token);

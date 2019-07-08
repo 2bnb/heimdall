@@ -6,5 +6,6 @@
 		"embed": "Ask Heimdall to embed something for you. Anything before a \"-\" is the title, and after it is the description.\nUse: `!embed [title]-[description]`",
 		"start": "Start a particular service.\nUse: `!start [service]`\nServices to choose from:\n- arma\n- arma_hc\n- teamspeak\n- reddit",
 		"stop": "Stop a particular service.\nUse: `!stop [service]`\nServices to choose from:\n- arma\n- arma_hc\n- teamspeak\n- reddit"
-	}
+	},
+	"pongs": ["Pong!", "Whoosh!", "Ouch!"]
 }
