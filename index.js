@@ -43,7 +43,7 @@ bot.on('ready', function (evt) {
 	log('info', 'Bot ready...');
 });
 
-function formatHelp(command) {
+function helpFormat(command) {
 	var helpArray = (require('./data.json')).helpArray;
 
 	var result = '';
@@ -82,7 +82,7 @@ bot.on('message', message => {
 					.setTitle('Heimdall\'s help')
 					.setColor(0xFF0000)
 					.setDescription(
-						formatHelp(message.content.substring(6))
+						helpFormat(message.content.substring(6))
 					);
 				message.channel.send(embed);
 				break;
