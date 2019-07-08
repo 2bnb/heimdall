@@ -6,7 +6,7 @@ Heimdall is a Discord bot that was created to be able to manage serivces install
 To install the bot ready for use, a few pieces of software are required.
 
 ### Requirements
-- NodeJS v12.6.0 and above
+- NodeJS v10.16.0 and above
 - Python 2 (v2.7.15)
 
 Once the above requirements have been installed:
