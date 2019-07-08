@@ -1,0 +1,9 @@
+{
+	"auth": {
+		"token": ""
+	},
+	"actions": {
+		"start_arma": "echo \"Stop arma\"",
+		"stop_arma": "echo \"Stop arma\""
+	}
+}
