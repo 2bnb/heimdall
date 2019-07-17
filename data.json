@@ -7,5 +7,11 @@
 		"start": "Start a particular service.\nUse: `!start [service]`\nServices to choose from:\n- arma\n- arma_hc\n- teamspeak\n- reddit",
 		"stop": "Stop a particular service.\nUse: `!stop [service]`\nServices to choose from:\n- arma\n- arma_hc\n- teamspeak\n- reddit"
 	},
-	"pongs": ["Pong!", "Whoosh!", "Ouch!"]
+	"pongs": ["Pong!", "Whoosh!", "Ouch!"],
+	"channelIds": {
+		"log": "597354886543179776"
+	},
+	"notifications" : {
+		"port": 66
+	}
 }

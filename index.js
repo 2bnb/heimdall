@@ -1,7 +1,8 @@
 const {Client, RichEmbed} = require('discord.js');
 const {exec} = require('child_process');
+const http = require('http');
 const config = require('./config.json');
-const data = require('./data.json');
+const db = require('./data.json');
 
 // Initialize Discord Bot
 var bot = new Client();
@@ -46,8 +47,84 @@ bot.on('ready', function (evt) {
 	log('info', 'Bot ready...');
 });
 
+////////////////////////////////////
+// Discord notifications to Users //
+////////////////////////////////////
+function notify(message, channel = 'log') {
+	if (!db.channelIds) {
+		log('error', `Channel ID of ${channel} does not exist.\nMessage could not be sent: ${message}`);
+	}
+
+	var channelId = db.channelIds[channel];
+
+	// if (guild.available) {}
+	bot.channels.get(channelId).send(message);
+}
+
+// Listen for commands from the local computer
+server = new http.createServer((request, response) => {
+	let connection = request.socket;
+	log('info', `Client ${connection.remoteAddress}:${connection.remotePort} connected`);
+
+	connection.on('close', () => {
+		log('info', `Client disconnected normally`);
+	});
+
+	request.on('error', (err) => {
+		if (err) {
+			switch (err.code) {
+				case 'ECONNRESET':
+					log('error', 'Connection closed prematurely by the client, we may have lost some data');
+					break;
+
+				case 'EADDRINUSE':
+					log('error', 'Port in use, retrying...');
+
+					setTimeout(() => {
+						server.close();
+						server.listen(db.notifications.port, () => {
+							log('info', `Listening to port ${db.notifications.port}`);
+						});
+					}, 1000);
+					break;
+
+				default:
+					log('error', `Listening errored unexpectedly: ${err.message}`);
+					break;
+			}
+
+			response.writeHead(100, {'Content-Type': 'application/json'});
+			response.write('{"error": 1, "content": "An error occured, check Heimdall\'s log for more details."}');
+			response.end();
+		}
+	});
+
+	// Handle the request
+	if (request.method === 'POST') {
+		let body = '';
+
+		request.on('data', (data) => {
+			body += data.toString();
+		});
+
+		request.on('end', () => {
+			body = JSON.parse(body);
+			notify('Communist machine says: ' + body.content);
+			log('info', `Client sent data: ${JSON.stringify(body)}`);
+
+			response.writeHead(100, {'Content-Type': 'application/json'});
+			response.write('{"error": 0, "content": "Notification sent! Have a nice day."}');
+			response.end();
+		});
+	}
+});
+
+server.listen(db.notifications.port, () => {
+	log('info', `Listening to port ${db.notifications.port}`);
+});
+
 function helpFormat(command) {
-	var helpArray = data.helpArray;
+	var helpArray = db.helpArray;
 
 	var result = '';
 	if (command == '') {
@@ -130,7 +207,7 @@ bot.on('message', message => {
 			// Use: `!ping`
 			// Author: Arend
 			case 'ping':
-				var pong = data.pongs[Math.floor(Math.random() * (data.pongs.length - 0)) + 0];
+				var pong = db.pongs[Math.floor(Math.random() * (db.pongs.length - 0)) + 0];
 				message.channel.send(pong);
 				result = `"${pong}" was sent...`;
 				break;
