@@ -1,4 +1,5 @@
 {
+	"commandPrefix": "!",
 	"helpArray": {
 		"help": "Ask Heimdall to teach you his ways... `[command]` is optional.\nUse: `!help [command]`",
 		"ping": "Ping Heimdall and hope he honours you with a response.\nUse: `!ping`",

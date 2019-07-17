@@ -4,6 +4,8 @@ const http = require('http');
 const config = require('./config.json');
 const db = require('./data.json');
 
+if (config.dev) { db.commandPrefix += 'dev_'; }
+
 // Initialize Discord Bot
 var bot = new Client();
 
@@ -127,15 +129,19 @@ function helpFormat(command) {
 	var helpArray = db.helpArray;
 
 	var result = '';
-	if (command == '') {
-		for (let [key, value] of Object.entries(helpArray)) {
-			result += '**!' + key + '**: ' + value + '\n';
-		}
-	} else {
+	if (config.dev) {
+		result += '__***WARNING: Development mode enabled***__\n\n';
+	}
+
+	if (command) {
 		if (Object.keys(helpArray).indexOf(command) > -1) {
-			result = '**!' + command + '**: ' + helpArray[command];
+			result = `**${db.commandPrefix}${command}**: ${helpArray[command]}`;
 		} else {
 			result = 'That command was not found';
+		}
+	} else {
+		for (let [key, value] of Object.entries(helpArray)) {
+			result += `**${db.commandPrefix}${key}**: ${value}\n`;
 		}
 	}
 
@@ -178,11 +184,12 @@ function getFlags(string, limit) {
 
 bot.on('message', message => {
 	// Our bot needs to know if it will execute a command
-	// It will listen for messages that will start with `!`
-	if (message.content.substring(0, 1) == '!') {
-		var args = message.content.substring(1).split(' ');
+	// It will listen for messages that will start with `!`, or any commandPrefix specified
+	if (message.content.substring(0, db.commandPrefix.length) == db.commandPrefix) {
+		var args = message.content.substring(db.commandPrefix.length).split(' ');
 		var cmd = args[0];
-		var result = '';
+		var result = [];
+		log('info', `Command \`${db.commandPrefix}${cmd}\` was called: "${message.content}"`);
 
 		args = args.splice(1);
 		switch(cmd) {
@@ -195,11 +202,9 @@ bot.on('message', message => {
 				var embed = new RichEmbed()
 					.setTitle('Heimdall\'s help')
 					.setColor(0xFF0000)
-					.setDescription(
-						helpFormat(message.content.substring(6))
-					);
+					.setDescription(helpFormat(args[0]));
 				message.channel.send(embed);
-				result = 'Help given...';
+				result = ['info', 'Help given...'];
 				break;
 
 			// Command: `!ping`
@@ -209,7 +214,7 @@ bot.on('message', message => {
 			case 'ping':
 				var pong = db.pongs[Math.floor(Math.random() * (db.pongs.length - 0)) + 0];
 				message.channel.send(pong);
-				result = `"${pong}" was sent...`;
+				result = ['info', `"${pong}" was sent...`];
 				break;
 
 			// Command: `!say`
@@ -217,8 +222,15 @@ bot.on('message', message => {
 			// Use: `!say [message]`
 			// Author: Arend
 			case 'say':
-				message.channel.send(message.content.substring(4));
-				result = 'Message regurgitated...';
+				let toSay = message.content.substring(db.commandPrefix.length + 4);
+
+				if (toSay) {
+					message.channel.send(toSay);
+					result = ['info', 'Message regurgitated...'];
+				} else {
+					message.channel.send('You didn\'t give me anything to say...');
+					result = ['warn', 'Nohing given to regurgitate...'];
+				}
 				break;
 
 			// Command: `!embed`
@@ -227,11 +239,11 @@ bot.on('message', message => {
 			// Author: Arend
 			case 'embed':
 				var embed = new RichEmbed()
-					.setTitle(message.content.substring(6, message.content.indexOf('-')))
+					.setTitle(message.content.substring(db.commandPrefix.length + 6, message.content.indexOf('-')))
 					.setColor(0xFF0000)
 					.setDescription(message.content.substring(message.content.indexOf('-') + 1));
 				message.channel.send(embed);
-				result = 'Embedded message sent...';
+				result = ['info', 'Embedded message sent...'];
 				break;
 
 			// Command: `!start`
@@ -241,7 +253,7 @@ bot.on('message', message => {
 			case 'start':
 				var service = getFlags(message.content)[0];
 				message.channel.send(action(message, 'start', service));
-				result = `Action start_${service} executed...`
+				result = ['info', `Action start_${service} executed...`];
 				break;
 
 			// Command: `!stop`
@@ -251,16 +263,15 @@ bot.on('message', message => {
 			case 'stop':
 				var service = getFlags(message.content)[0];
 				message.channel.send(action(message, 'stop', service));
-				result = `Action stop_${service} executed...`
+				result = ['info', `Action stop_${service} executed...`];
 				break;
 
 			default:
 				message.channel.send('Speak up you laggard!');
-				result = `Command \`!${cmd}\` not understood...`;
+				result = ['info', `Command \`!${cmd}\` not understood...`];
 		 }
 
-		 log('info', `Command \`!${cmd}\` was called: "${message.content}"`);
-		 log('info', `Command result: ${result}`);
+		 log(result[0], `Command result: ${result[1]}`);
 	 }
 });
 
