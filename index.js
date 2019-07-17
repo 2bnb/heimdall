@@ -54,13 +54,29 @@ bot.on('ready', function (evt) {
 ////////////////////////////////////
 function notify(message, channel = 'log') {
 	if (!db.channelIds) {
+		log('error', `You haven\'t set up channels yet!\nMessage could not be sent: ${message}`);
+		return {
+			'error': 1,
+			'content': `You haven\'t set up channels yet!\nMessage could not be sent: ${message}`
+		};
+	}
+
+	if (!db.channelIds[channel]) {
 		log('error', `Channel ID of ${channel} does not exist.\nMessage could not be sent: ${message}`);
+		return {
+			'error': 1,
+			'content': `Channel ID of ${channel} does not exist.\nMessage could not be sent: ${message}`
+		};
 	}
 
 	var channelId = db.channelIds[channel];
 
 	// if (guild.available) {}
 	bot.channels.get(channelId).send(message);
+	return {
+		'error': 0,
+		'content': 'Notification sent! Have a nice day.'
+	};
 }
 
 // Listen for commands from the local computer
@@ -111,11 +127,11 @@ server = new http.createServer((request, response) => {
 
 		request.on('end', () => {
 			body = JSON.parse(body);
-			notify('Communist machine says: ' + body.content);
-			log('info', `Client sent data: ${JSON.stringify(body)}`);
+			let notifyStatus = notify('Communist machine says: ' + body.content, body.channel);
+			log('info', `Received data: ${JSON.stringify(body)}`);
 
 			response.writeHead(100, {'Content-Type': 'application/json'});
-			response.write('{"error": 0, "content": "Notification sent! Have a nice day."}');
+			response.write(notifyStatus);
 			response.end();
 		});
 	}
