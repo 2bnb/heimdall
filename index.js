@@ -12,7 +12,7 @@ if (config.dev) {
 }
 
 // Initialize Discord Bot
-var bot = new Client();
+const bot = new Client();
 
 //////////////////////////////////
 // Console Log wrapper function //
@@ -21,7 +21,7 @@ function log(type, message) {
 	if (!type) { type = 'log'; }
 
 	// Colour codes: https://stackoverflow.com/a/41407246/3774356
-	var typeColours = {
+	let typeColours = {
 		log: {
 			prepend: '',
 			append: '\x1b[0m'
@@ -43,8 +43,8 @@ function log(type, message) {
 		}
 	};
 
-	var date = new Date(Date.now());
-	var timestamp = `${date.getHours()}:${date.getMinutes()}:${date.getSeconds()}`;
+	let date = new Date(Date.now());
+	let timestamp = `${date.getHours()}:${date.getMinutes()}:${date.getSeconds()}`;
 
 	console[type](`[\x1b[36m${timestamp}\x1b[0m] ${typeColours[type].prepend}${message}${typeColours[type].append}`);
 }
@@ -74,7 +74,7 @@ function notify(message, channel = 'log') {
 		};
 	}
 
-	var channelId = db.channelIds[channel];
+	let channelId = db.channelIds[channel];
 
 	// if (guild.available) {}
 	bot.channels.get(channelId).send(message);
@@ -85,7 +85,7 @@ function notify(message, channel = 'log') {
 }
 
 // Listen for commands from the local computer
-server = new http.createServer((request, response) => {
+const server = new http.createServer((request, response) => {
 	let connection = request.socket;
 	log('info', `Client ${connection.remoteAddress}:${connection.remotePort} connected`);
 
@@ -147,9 +147,9 @@ server.listen(db.notifications.port, () => {
 });
 
 function helpFormat(command) {
-	var helpArray = db.helpArray;
+	let helpArray = db.helpArray;
 
-	var result = '';
+	let result = '';
 	if (config.dev) {
 		result += '__***WARNING: Development mode enabled***__\n\n';
 	}
@@ -170,8 +170,8 @@ function helpFormat(command) {
 }
 
 function action(message, order, service) {
-	var actions = config.actions;
-	var action = order + '_' + service;
+	let actions = config.actions;
+	let action = order + '_' + service;
 
 	if (Object.keys(actions).indexOf(action) > -1) {
 		exec(actions[action], (error, stdout, stderror) => {
@@ -198,7 +198,7 @@ function action(message, order, service) {
 
 function getFlags(string, limit) {
 	if (limit == undefined) { limit = 2 };
-	var flags = string.split(' ', limit);
+	let flags = string.split(' ', limit);
 	flags.shift();
 	return flags;
 }
@@ -212,9 +212,10 @@ bot.on('message', message => {
 			return;
 		}
 
-		var args = message.content.substring(db.commandPrefix.length).split(' ');
-		var cmd = args[0];
-		var result = [];
+		let args = message.content.substring(db.commandPrefix.length).split(' ');
+		let cmd = args[0];
+		let result = [];
+		let service;
 		log('info', `Command \`${db.commandPrefix}${cmd}\` was called: "${message.content}"`);
 
 		args = args.splice(1);
@@ -225,11 +226,11 @@ bot.on('message', message => {
 			// Use: `!help [command]`
 			// Author: Arend
 			case 'help':
-				var embed = new RichEmbed()
+				let helpMessage = new RichEmbed()
 					.setTitle('Heimdall\'s help')
 					.setColor(0xFF0000)
 					.setDescription(helpFormat(args[0]));
-				message.channel.send(embed);
+				message.channel.send(helpMessage);
 				result = ['info', 'Help given...'];
 				break;
 
@@ -238,7 +239,7 @@ bot.on('message', message => {
 			// Use: `!ping`
 			// Author: Arend
 			case 'ping':
-				var pong = db.pongs[Math.floor(Math.random() * (db.pongs.length - 0)) + 0];
+				let pong = db.pongs[Math.floor(Math.random() * (db.pongs.length - 0)) + 0];
 				message.channel.send(pong);
 				result = ['info', `"${pong}" was sent...`];
 				break;
@@ -264,7 +265,7 @@ bot.on('message', message => {
 			// Use: `!embed [title]-[description]`
 			// Author: Arend
 			case 'embed':
-				var embed = new RichEmbed()
+				let embed = new RichEmbed()
 					.setTitle(message.content.substring(db.commandPrefix.length + 6, message.content.indexOf('-')))
 					.setColor(0xFF0000)
 					.setDescription(message.content.substring(message.content.indexOf('-') + 1));
@@ -277,7 +278,7 @@ bot.on('message', message => {
 			// Use: `!start [service]`
 			// Author: Arend
 			case 'start':
-				var service = getFlags(message.content)[0];
+				service = getFlags(message.content)[0];
 				message.channel.send(action(message, 'start', service));
 				result = ['info', `Action start_${service} executed...`];
 				break;
@@ -287,7 +288,7 @@ bot.on('message', message => {
 			// Use: `!stop [service]`
 			// Author: Arend
 			case 'stop':
-				var service = getFlags(message.content)[0];
+				service = getFlags(message.content)[0];
 				message.channel.send(action(message, 'stop', service));
 				result = ['info', `Action stop_${service} executed...`];
 				break;
