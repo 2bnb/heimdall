@@ -4,7 +4,12 @@ const http = require('http');
 const config = require('./config.json');
 const db = require('./data.json');
 
-if (config.dev) { db.commandPrefix += 'dev_'; }
+let devPrefix = '';
+if (config.dev) {
+	db.commandPrefix += 'dev_';
+} else {
+	devPrefix = `${db.commandPrefix}dev_`;
+}
 
 // Initialize Discord Bot
 var bot = new Client();
@@ -202,6 +207,12 @@ bot.on('message', message => {
 	// Our bot needs to know if it will execute a command
 	// It will listen for messages that will start with `!`, or any commandPrefix specified
 	if (message.content.substring(0, db.commandPrefix.length) == db.commandPrefix) {
+		if (message.content.substring(0, devPrefix.length) == devPrefix && !config.dev) {
+			message.channel.send('I\'m not in development mode.');
+			log('warn', 'Attempted to use a dev command whilst not in dev mode');
+			return;
+		}
+
 		var args = message.content.substring(db.commandPrefix.length).split(' ');
 		var cmd = args[0];
 		var result = [];
