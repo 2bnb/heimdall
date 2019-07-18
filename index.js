@@ -208,8 +208,7 @@ bot.on('message', message => {
 	// It will listen for messages that will start with `!`, or any commandPrefix specified
 	if (message.content.substring(0, db.commandPrefix.length) == db.commandPrefix) {
 		if (message.content.substring(0, devPrefix.length) == devPrefix && !config.dev) {
-			message.channel.send('I\'m not in development mode.');
-			log('warn', 'Attempted to use a dev command whilst not in dev mode');
+			log('warn', `Attempted to use a dev command whilst not in dev mode: ${message.content}`);
 			return;
 		}
 
