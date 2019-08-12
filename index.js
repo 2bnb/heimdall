@@ -1,5 +1,6 @@
 const {Client, RichEmbed} = require('discord.js');
 const {exec} = require('child_process');
+const https = require('https');
 const http = require('http');
 const config = require('./config.json');
 const db = require('./data.json');
@@ -258,6 +259,19 @@ bot.on('message', message => {
 					message.channel.send('You didn\'t give me anything to say...');
 					result = ['warn', 'Nohing given to regurgitate...'];
 				}
+				break;
+
+			// Command: `!status`
+			// Description: Display the status of the Operations server
+			// Use: `!status
+			// Author: Arend
+			case 'status':
+				message.channel.send("2BNB Operations server status:", {
+					files: [
+						db.serverStatusURL
+					]
+				});
+				result = ['info', 'Status sent...'];
 				break;
 
 			// Command: `!embed`
