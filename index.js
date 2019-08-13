@@ -147,8 +147,20 @@ server.listen(db.notifications.port, () => {
 	log('info', `Listening to port ${db.notifications.port}`);
 });
 
-function helpFormat(command) {
-	let helpArray = db.helpArray;
+function helpFormat(command, roles) {
+	let helpArray = db.helpArray.public;
+
+	if (roles.has(db.roleIds.member)) {
+		Object.assign(helpArray, db.helpArray.member);
+
+		if (roles.has(db.roleIds.nco) || roles.has(db.roleIds.command)) {
+			Object.assign(helpArray, db.helpArray.nco);
+		}
+
+		if (roles.has(db.roleIds.command)) {
+			Object.assign(helpArray, db.helpArray.command);
+		}
+	}
 
 	let result = '';
 	if (config.dev) {
@@ -208,7 +220,9 @@ bot.on('message', message => {
 	// Our bot needs to know if it will execute a command
 	// It will listen for messages that will start with `!`, or any commandPrefix specified
 	if (message.content.substring(0, db.commandPrefix.length) == db.commandPrefix) {
-
+		let hasCommandRole = message.member.roles.has(db.roleIds.command);
+		let hasNcoRole = message.member.roles.has(db.roleIds.nco);
+		let hasMemberRole = message.member.roles.has(db.roleIds.member);
 		let args = message.content.substring(db.commandPrefix.length).split(' ');
 		let cmd = args[0];
 		let result = [];
@@ -216,6 +230,9 @@ bot.on('message', message => {
 		log('info', `Command \`${db.commandPrefix}${cmd}\` was called: "${message.content}"`);
 
 		args = args.splice(1);
+		////////////
+		// Public //
+		////////////
 		switch(cmd) {
 			// Command: `!help`
 			// Description: Display available commands, or the help for a single command
@@ -223,10 +240,11 @@ bot.on('message', message => {
 			// Use: `!help [command]`
 			// Author: Arend
 			case 'help':
+				log('info', message.member.roles);
 				let helpMessage = new RichEmbed()
 					.setTitle('Heimdall\'s help')
 					.setColor(0xFF0000)
-					.setDescription(helpFormat(args[0]));
+					.setDescription(helpFormat(args[0], message.member.roles));
 				message.channel.send(helpMessage);
 				result = ['info', 'Help given...'];
 				break;
@@ -257,19 +275,6 @@ bot.on('message', message => {
 				}
 				break;
 
-			// Command: `!status`
-			// Description: Display the status of the Operations server
-			// Use: `!status
-			// Author: Arend
-			case 'status':
-				message.channel.send("2BNB Operations server status:", {
-					files: [
-						db.serverStatusURL
-					]
-				});
-				result = ['info', 'Status sent...'];
-				break;
-
 			// Command: `!embed`
 			// Description: Display the given content as an embedded message
 			// Use: `!embed [title]-[description]`
@@ -282,34 +287,71 @@ bot.on('message', message => {
 				message.channel.send(embed);
 				result = ['info', 'Embedded message sent...'];
 				break;
+		}
 
-			// Command: `!start`
-			// Description: Start the given service
-			// Use: `!start [service]`
-			// Author: Arend
-			case 'start':
-				service = getFlags(message.content)[0];
-				message.channel.send(action(message, 'start', service));
-				result = ['info', `Action start_${service} executed...`];
-				break;
+		////////////////////////
+		// @Member and higher //
+		////////////////////////
+		if (hasMemberRole) {
+			switch(cmd) {
+				// Command: `!status`
+				// Description: Display the status of the Operations server
+				// Use: `!status
+				// Author: Arend
+				case 'status':
+					message.channel.send("2BNB Operations server status:", {
+						files: [
+							db.serverStatusURL
+						]
+					});
+					result = ['info', 'Status sent...'];
+					break;
+			}
 
-			// Command: `!stop`
-			// Description: stop the given service
-			// Use: `!stop [service]`
-			// Author: Arend
-			case 'stop':
-				service = getFlags(message.content)[0];
-				message.channel.send(action(message, 'stop', service));
-				result = ['info', `Action stop_${service} executed...`];
-				break;
+			/////////////////////
+			// @NCO and higher //
+			/////////////////////
+			if (hasNcoRole && hasCommandRole) {
+				switch(cmd) {
+				// Command: `!start`
+				// Description: Start the given service
+				// Use: `!start [service]`
+				// Author: Arend
+				case 'start':
+					service = getFlags(message.content)[0];
+					message.channel.send(action(message, 'start', service));
+					result = ['info', `Action start_${service} executed...`];
+					break;
 
-			default:
-				message.channel.send('Speak up you laggard!');
-				result = ['info', `Command \`!${cmd}\` not understood...`];
-		 }
+				// Command: `!stop`
+				// Description: stop the given service
+				// Use: `!stop [service]`
+				// Author: Arend
+				case 'stop':
+					service = getFlags(message.content)[0];
+					message.channel.send(action(message, 'stop', service));
+					result = ['info', `Action stop_${service} executed...`];
+					break;
+				}
+			}
 
-		 log(result[0], `Command result: ${result[1]}`);
-	 }
+			/////////////////////////
+			// @Command and higher //
+			/////////////////////////
+			if (hasCommandRole) {
+				switch(cmd) {
+
+				}
+			}
+		}
+
+		if (result.length == 0) {
+			message.channel.send('Speak up you laggard!');
+			result = ['info', `Command \`!${cmd}\` not understood...`];
+		}
+
+		log(result[0], `Command result: ${result[1]}`);
+	}
 });
 
 bot.login(config.auth.token);

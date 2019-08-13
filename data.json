@@ -1,12 +1,25 @@
 {
 	"commandPrefix": "!",
 	"helpArray": {
-		"help": "Ask Heimdall to teach you his ways... `[command]` is optional.\nUse: `!help [command]`",
-		"ping": "Ping Heimdall and hope he honours you with a response.\nUse: `!ping`",
-		"say": "Ask Heimdall to say something for you.\nUse: `!say [message]`",
-		"embed": "Ask Heimdall to embed something for you. Anything before a \"-\" is the title, and after it is the description.\nUse: `!embed [title]-[description]`",
-		"start": "Start a particular service.\nUse: `!start [service]`\nServices to choose from:\n- arma\n- arma_hc\n- teamspeak\n- reddit",
-		"stop": "Stop a particular service.\nUse: `!stop [service]`\nServices to choose from:\n- arma\n- arma_hc\n- teamspeak\n- reddit"
+		"public": {
+			"help": "Ask Heimdall to teach you his ways... `[command]` is optional.\nUse: `!help [command]`",
+			"ping": "Ping Heimdall and hope he honours you with a response.\nUse: `!ping`",
+			"say": "Ask Heimdall to say something for you.\nUse: `!say [message]`",
+			"embed": "Ask Heimdall to embed something for you. Anything before a \"-\" is the title, and after it is the description.\nUse: `!embed [title]-[description]`"
+		},
+		"member": {
+			"status": "Check the status of the Arma 3 Operations server"
+		},
+		"nco": {
+			"start": "Start a particular service.\nUse: `!start [service]`\nServices to choose from:\n- arma\n- arma_hc\n- teamspeak\n- reddit",
+			"stop": "Stop a particular service.\nUse: `!stop [service]`\nServices to choose from:\n- arma\n- arma_hc\n- teamspeak\n- reddit"
+		},
+		"command": {}
+	},
+	"roleIds": {
+		"member": "541739531821383691",
+		"nco": "585418610688917504",
+		"command": "532684379206451201"
 	},
 	"pongs": ["Pong!", "Whoosh!", "Ouch!"],
 	"serverStatusURL": "https://cache.gametracker.com/server_info/5.9.108.39:2302/banner_560x95.png",
