@@ -220,6 +220,10 @@ bot.on('message', message => {
 	// Our bot needs to know if it will execute a command
 	// It will listen for messages that will start with `!`, or any commandPrefix specified
 	if (message.content.substring(0, db.commandPrefix.length) == db.commandPrefix) {
+		if (message.content.substring(0, devPrefix.length) == devPrefix && !config.dev) {
+			return;
+		}
+
 		let hasCommandRole = message.member.roles.has(db.roleIds.command);
 		let hasNcoRole = message.member.roles.has(db.roleIds.nco);
 		let hasMemberRole = message.member.roles.has(db.roleIds.member);
