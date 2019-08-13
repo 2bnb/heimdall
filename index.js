@@ -208,10 +208,6 @@ bot.on('message', message => {
 	// Our bot needs to know if it will execute a command
 	// It will listen for messages that will start with `!`, or any commandPrefix specified
 	if (message.content.substring(0, db.commandPrefix.length) == db.commandPrefix) {
-		if (message.content.substring(0, devPrefix.length) == devPrefix && !config.dev) {
-			log('warn', `Attempted to use a dev command whilst not in dev mode: ${message.content}`);
-			return;
-		}
 
 		let args = message.content.substring(db.commandPrefix.length).split(' ');
 		let cmd = args[0];
