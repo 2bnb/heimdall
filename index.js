@@ -1,10 +1,21 @@
 const {Client, RichEmbed} = require('discord.js');
+<<<<<<< Updated upstream
 const {exec} = require('child_process');
 const https = require('https');
+=======
+const {exec, spawn} = require('child_process');
+>>>>>>> Stashed changes
 const http = require('http');
 const config = require('./config.json');
 const db = require('./data.json');
+const {ArmaManager} = require('./modules/index.js');
 
+let opsServer = new ArmaManager();
+
+opsServer.start();
+console.log(opsServer.isActive());
+
+// Are we in development mode?
 let devPrefix = '';
 if (config.dev) {
 	db.commandPrefix += 'dev_';
@@ -14,6 +25,7 @@ if (config.dev) {
 
 // Initialize Discord Bot
 const bot = new Client();
+
 
 //////////////////////////////////
 // Console Log wrapper function //
@@ -54,6 +66,7 @@ function log(type, message) {
 bot.on('ready', function (evt) {
 	log('info', 'Bot ready...');
 });
+
 
 ////////////////////////////////////
 // Discord notifications to Users //
@@ -147,6 +160,9 @@ server.listen(db.notifications.port, () => {
 	log('info', `Listening to port ${db.notifications.port}`);
 });
 
+/////////////////////////////
+// Format the Help Message //
+/////////////////////////////
 function helpFormat(command, roles) {
 	let helpArray = db.helpArray.public;
 
@@ -182,24 +198,35 @@ function helpFormat(command, roles) {
 	return result;
 }
 
+
+/////////////////////////////
+// Execute action commands //
+/////////////////////////////
 function action(message, order, service) {
 	let actions = config.actions;
 	let action = order + '_' + service;
 
+	// If the action exists
 	if (Object.keys(actions).indexOf(action) > -1) {
-		exec(actions[action], (error, stdout, stderror) => {
-			if (error) {
-				log('error', `[${action}]: ${error}`);
-				message.channel.send(`Error from server:\n\`\`\`\n ${error}\n\`\`\``);
-				return;
-			}
+		let command = actions[action];
 
-			log('log', `stdout: ${stdout}`);
+		if (typeof command === 'string') {
+			exec(command, (error, stdout, stderror) => {
+				if (error) {
+					log('error', `[${action}]: ${error}`);
+					message.channel.send(`Error from server:\n\`\`\`\n ${error}\n\`\`\``);
+					return;
+				}
 
-			if (stderror) {
-				log('warn', `stderror: ${stderror}`);
-			}
-		});
+				log('log', `stdout: ${stdout}`);
+
+				if (stderror) {
+					log('warn', `stderror: ${stderror}`);
+				}
+			});
+		} else {
+			spawn(command);
+		}
 
 		result = 'Action has been executed.';
 	} else {
