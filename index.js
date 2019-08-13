@@ -344,7 +344,15 @@ bot.on('message', message => {
 			/////////////////////////
 			if (hasCommandRole) {
 				switch(cmd) {
-
+					// Command: `!update`
+					// Description: Update Heimdall to the latest commit on Github
+					// Use: `!update
+					// Author: Arend
+					case 'update':
+						service = getFlags(message.content)[0];
+						message.channel.send(action(message, 'update', 'heimdall'));
+						result = ['info', `Action update_heimdall executed...`];
+						break;
 				}
 			}
 		}
