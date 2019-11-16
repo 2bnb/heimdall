@@ -315,7 +315,7 @@ bot.on('message', message => {
 			/////////////////////
 			// @NCO and higher //
 			/////////////////////
-			if (hasNcoRole && hasCommandRole) {
+			if (hasNcoRole || hasCommandRole) {
 				switch(cmd) {
 				// Command: `!start`
 				// Description: Start the given service
