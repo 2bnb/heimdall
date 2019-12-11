@@ -272,6 +272,7 @@ bot.on('message', message => {
 
 				if (toSay) {
 					message.channel.send(toSay);
+					message.delete();
 					result = ['info', 'Message regurgitated...'];
 				} else {
 					message.channel.send('You didn\'t give me anything to say...');
