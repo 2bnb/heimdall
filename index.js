@@ -299,6 +299,7 @@ bot.on('message', message => {
 
 				if (toSay) {
 					message.channel.send(toSay);
+					message.delete();
 					result = ['info', 'Message regurgitated...'];
 				} else {
 					message.channel.send('You didn\'t give me anything to say...');
@@ -342,7 +343,7 @@ bot.on('message', message => {
 			/////////////////////
 			// @NCO and higher //
 			/////////////////////
-			if (hasNcoRole && hasCommandRole) {
+			if (hasNcoRole || hasCommandRole) {
 				switch(cmd) {
 				// Command: `!start`
 				// Description: Start the given service
@@ -371,7 +372,15 @@ bot.on('message', message => {
 			/////////////////////////
 			if (hasCommandRole) {
 				switch(cmd) {
-
+					// Command: `!update`
+					// Description: Update Heimdall to the latest commit on Github
+					// Use: `!update
+					// Author: Arend
+					case 'update':
+						service = getFlags(message.content)[0];
+						message.channel.send(action(message, 'update', 'heimdall'));
+						result = ['info', `Action update_heimdall executed...`];
+						break;
 				}
 			}
 		}
