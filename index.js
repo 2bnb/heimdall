@@ -206,6 +206,8 @@ function action(message, order, service) {
 
 	if (service) {
 		if (service.indexOf('arma') > -1) {
+			armaServers.updatePointers();
+
 			if (service == 'arma') {
 				service = 'armaOps';
 			}
@@ -225,11 +227,16 @@ function action(message, order, service) {
 
 			if (order == 'stop') {
 				armaServers.stop(service);
-				result = `Stopping server: ${server}`;
+				result = `Stopping all ${service} servers`;
 			}
 
 			if (order == 'status') {
-				armaServers.isAlive(sevice);
+				result = `Found ${armaServers.instances.length} servers online:\n`;
+				armaServers.instances.forEach(instance => {
+					result += `\t- ${instance.nicename}\n`;
+				});
+				// Make this able to check individually once multiple arguments are parsable
+				// result = armaServers.isAlive(service) ? 'Online' : 'Offline';
 			}
 
 			return result;
@@ -364,7 +371,10 @@ bot.on('message', message => {
 				// Use: `!status
 				// Author: Arend
 				case 'status':
-					message.channel.send('2BNB Operations server status:', {
+					message.channel.send([
+						action(message, 'status', getFlags(message.content)[0]),
+						'2BNB Operations server status:'
+					], {
 						files: [
 							db.serverStatusURL
 						]
