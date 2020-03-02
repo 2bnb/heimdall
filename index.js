@@ -90,7 +90,11 @@ function notify(message, channel = 'log') {
 
 	let channelId = db.channelIds[channel];
 
-	// if (guild.available) {}
+	// Avoid cluttering production channels with testing messages
+	if (config.dev) {
+		channelId = db.channelIds['testing'];
+	}
+
 	bot.channels.get(channelId).send(message);
 	return {
 		'error': 0,
@@ -246,7 +250,10 @@ function getFlags(string, limit) {
 bot.on('message', message => {
 	// Our bot needs to know if it will execute a command
 	// It will listen for messages that will start with `!`, or any commandPrefix specified
-	if (message.content.substring(0, db.commandPrefix.length) == db.commandPrefix) {
+	if (
+		(message.content.substring(0, db.commandPrefix.length) == db.commandPrefix)
+		&& (message.content.substring(db.commandPrefix.length).length > 0)
+	) {
 		if (message.content.substring(0, devPrefix.length) == devPrefix && !config.dev) {
 			return;
 		}
@@ -331,7 +338,7 @@ bot.on('message', message => {
 				// Use: `!status
 				// Author: Arend
 				case 'status':
-					message.channel.send("2BNB Operations server status:", {
+					message.channel.send('2BNB Operations server status:', {
 						files: [
 							db.serverStatusURL
 						]
