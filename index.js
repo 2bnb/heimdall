@@ -1,19 +1,12 @@
 const {Client, RichEmbed} = require('discord.js');
-<<<<<<< Updated upstream
-const {exec} = require('child_process');
-const https = require('https');
-=======
 const {exec, spawn} = require('child_process');
->>>>>>> Stashed changes
 const http = require('http');
 const config = require('./config.json');
 const db = require('./data.json');
 const {ArmaManager} = require('./modules/index.js');
 
-let opsServer = new ArmaManager();
+const armaServers = new ArmaManager();
 
-opsServer.start();
-console.log(opsServer.isActive());
 
 // Are we in development mode?
 let devPrefix = '';
@@ -209,6 +202,39 @@ function helpFormat(command, roles) {
 function action(message, order, service) {
 	let actions = config.actions;
 	let action = order + '_' + service;
+	let result = '';
+
+	if (service) {
+		if (service.indexOf('arma') > -1) {
+			if (service == 'arma') {
+				service = 'armaOps';
+			}
+
+			if (!config.servers.hasOwnProperty(service)) {
+				log('error',`[${action}]: Service wasn't found in the servers config.`);
+				return 'Function is not configured in game server configs';
+			}
+
+			if (order == 'start') {
+				let instance = armaServers.start(service);
+				                                 console.log(instance);
+				// if (armaServers.isAlive(instance.process.pid)) {
+					result = 'Arma server started with PID ' + instance.process.pid;
+				// }
+			}
+
+			if (order == 'stop') {
+				armaServers.stop(service);
+				result = `Stopping server: ${server}`;
+			}
+
+			if (order == 'status') {
+				armaServers.isAlive(sevice);
+			}
+
+			return result;
+		}
+	}
 
 	// If the action exists
 	if (Object.keys(actions).indexOf(action) > -1) {
