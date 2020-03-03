@@ -5,5 +5,58 @@
 	"actions": {
 		"start_arma": "echo \"Stop arma\"",
 		"stop_arma": "echo \"Stop arma\""
+	},
+	"defaultServerSettings" : {
+		"arma" : {
+			"nicename": "Arma server",
+			"options" : {
+				"path": "D:\\Programs\\Steam\\steamapps\\common\\Arma 3 Server",
+				"game": "arma3_x64",
+				"parameters" : [
+					"-noPause",
+					"-noSound",
+					"-world=empty",
+					"-exThreads=8",
+					"-malloc=system",
+					"-enableHT",
+					"-maxMem=8192",
+					"-ranking=\"\"",
+					"-par=\"\""
+				],
+				"mods" : [
+					"mods\\@CBA_A3",
+					"mods\\@ace",
+					"@2BNB Extras"
+				]
+			}
+		}
+	},
+	"servers": {
+		"armaOps": {
+			"nicename": "Arma - Operations server",
+			"options": {
+				"parameters": [
+					"-port=2302",
+					"-profiles=\"D:\\Programs\\Steam\\steamapps\\common\\Arma 3 Server\""
+				],
+				"config": "server.cfg",
+				"serverMods": [
+					"@vcom_ai",
+					"@dzn Casual Gaming",
+					"@2BNB Framework"
+				]
+			}
+		}
+		"armaHeadless": {
+			"nicename": "Arma - Headless client",
+			"type": "headless",
+			"options": {
+				"parameters": [
+					"-port=2302",
+					"-profiles=\"D:\\Programs\\Steam\\steamapps\\common\\Arma 3 Server\""
+				],
+				"config": "server.cfg"
+			}
+		}
 	}
 }

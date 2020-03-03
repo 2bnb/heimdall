@@ -22,6 +22,8 @@
   },
   "homepage": "https://github.com/Saborknight/2bnb-heimdall#readme",
   "dependencies": {
-    "discord.js": "^11.5.1"
+    "arma-server": "git+https://github.com/2bnb/node-arma-server.git",
+    "discord.js": "^11.5.1",
+    "ps-list": "^7.0.0"
   }
 }

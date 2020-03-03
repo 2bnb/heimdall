@@ -1,10 +1,14 @@
 const {Client, RichEmbed} = require('discord.js');
-const {exec} = require('child_process');
-const https = require('https');
+const {exec, spawn} = require('child_process');
 const http = require('http');
 const config = require('./config.json');
 const db = require('./data.json');
+const {ArmaManager} = require('./modules/index.js');
 
+const armaServers = new ArmaManager();
+
+
+// Are we in development mode?
 let devPrefix = '';
 if (config.dev) {
 	db.commandPrefix += 'dev_';
@@ -14,6 +18,7 @@ if (config.dev) {
 
 // Initialize Discord Bot
 const bot = new Client();
+
 
 //////////////////////////////////
 // Console Log wrapper function //
@@ -55,6 +60,7 @@ bot.on('ready', function (evt) {
 	log('info', 'Bot ready...');
 });
 
+
 ////////////////////////////////////
 // Discord notifications to Users //
 ////////////////////////////////////
@@ -77,7 +83,11 @@ function notify(message, channel = 'log') {
 
 	let channelId = db.channelIds[channel];
 
-	// if (guild.available) {}
+	// Avoid cluttering production channels with testing messages
+	if (config.dev) {
+		channelId = db.channelIds['testing'];
+	}
+
 	bot.channels.get(channelId).send(message);
 	return {
 		'error': 0,
@@ -147,6 +157,9 @@ server.listen(db.notifications.port, () => {
 	log('info', `Listening to port ${db.notifications.port}`);
 });
 
+/////////////////////////////
+// Format the Help Message //
+/////////////////////////////
 function helpFormat(command, roles) {
 	let helpArray = db.helpArray.public;
 
@@ -182,24 +195,75 @@ function helpFormat(command, roles) {
 	return result;
 }
 
+
+/////////////////////////////
+// Execute action commands //
+/////////////////////////////
 function action(message, order, service) {
 	let actions = config.actions;
 	let action = order + '_' + service;
+	let result = '';
 
+	if (service) {
+		if (service.indexOf('arma') > -1) {
+			armaServers.updatePointers();
+
+			if (service == 'arma') {
+				service = 'armaOps';
+			}
+
+			if (!config.servers.hasOwnProperty(service)) {
+				log('error',`[${action}]: Service wasn't found in the servers config.`);
+				return 'Function is not configured in game server configs';
+			}
+
+			if (order == 'start') {
+				let instance = armaServers.start(service);
+				                                 console.log(instance);
+				// if (armaServers.isAlive(instance.process.pid)) {
+					result = 'Arma server started with PID ' + instance.process.pid;
+				// }
+			}
+
+			if (order == 'stop') {
+				armaServers.stop(service);
+				result = `Stopping all ${service} servers`;
+			}
+
+			if (order == 'status') {
+				result = `Found ${armaServers.instances.length} servers online:\n`;
+				armaServers.instances.forEach(instance => {
+					result += `\t- ${instance.nicename}\n`;
+				});
+				// Make this able to check individually once multiple arguments are parsable
+				// result = armaServers.isAlive(service) ? 'Online' : 'Offline';
+			}
+
+			return result;
+		}
+	}
+
+	// If the action exists
 	if (Object.keys(actions).indexOf(action) > -1) {
-		exec(actions[action], (error, stdout, stderror) => {
-			if (error) {
-				log('error', `[${action}]: ${error}`);
-				message.channel.send(`Error from server:\n\`\`\`\n ${error}\n\`\`\``);
-				return;
-			}
+		let command = actions[action];
 
-			log('log', `stdout: ${stdout}`);
+		if (typeof command === 'string') {
+			exec(command, (error, stdout, stderror) => {
+				if (error) {
+					log('error', `[${action}]: ${error}`);
+					message.channel.send(`Error from server:\n\`\`\`\n ${error}\n\`\`\``);
+					return;
+				}
 
-			if (stderror) {
-				log('warn', `stderror: ${stderror}`);
-			}
-		});
+				log('log', `stdout: ${stdout}`);
+
+				if (stderror) {
+					log('warn', `stderror: ${stderror}`);
+				}
+			});
+		} else {
+			spawn(command);
+		}
 
 		result = 'Action has been executed.';
 	} else {
@@ -219,7 +283,10 @@ function getFlags(string, limit) {
 bot.on('message', message => {
 	// Our bot needs to know if it will execute a command
 	// It will listen for messages that will start with `!`, or any commandPrefix specified
-	if (message.content.substring(0, db.commandPrefix.length) == db.commandPrefix) {
+	if (
+		(message.content.substring(0, db.commandPrefix.length) == db.commandPrefix)
+		&& (message.content.substring(db.commandPrefix.length).length > 0)
+	) {
 		if (message.content.substring(0, devPrefix.length) == devPrefix && !config.dev) {
 			return;
 		}
@@ -304,7 +371,10 @@ bot.on('message', message => {
 				// Use: `!status
 				// Author: Arend
 				case 'status':
-					message.channel.send("2BNB Operations server status:", {
+					message.channel.send([
+						action(message, 'status', getFlags(message.content)[0]),
+						'2BNB Operations server status:'
+					], {
 						files: [
 							db.serverStatusURL
 						]
