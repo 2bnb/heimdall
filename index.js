@@ -203,6 +203,7 @@ function action(message, order, service) {
 	let actions = config.actions;
 	let actionReference = order + '_' + service;
 	let result = '';
+	let actionExecutedMessage = 'Action has been executed.';
 
 	if (service) {
 		if (service.indexOf('arma') > -1) {
@@ -243,9 +244,10 @@ function action(message, order, service) {
 		}
 
 		if (actionReference == 'update_heimdall') {
+			result = 'Heimdall has been updated';
 			action(message, 'stop', 'heimdall');
 			action(message, 'pull', 'heimdall');
-			action(message, 'start', 'heimdall');
+			result = action(message, 'start', 'heimdall') !== actionExecutedMessage ? 'Heindall failed to update' : result;
 			return result;
 		}
 	}
@@ -272,7 +274,7 @@ function action(message, order, service) {
 			spawn(command);
 		}
 
-		result = 'Action has been executed.';
+		result = actionExecutedMessage;
 	} else {
 		result = 'Action does not exist';
 	}
