@@ -378,13 +378,13 @@ bot.on('message', message => {
 				// Use: `!status
 				// Author: Arend
 				case 'status':
+					let singularServer = action(message, 'status', getFlags(message.content)[0]);
+					singularServer = singularServer !== 'Action does not exist' ? singularServer : '';
 					message.channel.send([
-						action(message, 'status', getFlags(message.content)[0]),
-						'2BNB Operations server status:'
+						singularServer,
+						'2BNB server statuses:'
 					], {
-						files: [
-							db.serverStatusURL
-						]
+						files: config.serverStatusURLs
 					});
 					result = ['info', 'Status sent...'];
 					break;
