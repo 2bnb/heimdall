@@ -201,7 +201,7 @@ function helpFormat(command, roles) {
 /////////////////////////////
 function action(message, order, service) {
 	let actions = config.actions;
-	let action = order + '_' + service;
+	let actionReference = order + '_' + service;
 	let result = '';
 
 	if (service) {
@@ -213,7 +213,7 @@ function action(message, order, service) {
 			}
 
 			if (!config.servers.hasOwnProperty(service)) {
-				log('error',`[${action}]: Service wasn't found in the servers config.`);
+				log('error',`[${actionReference}]: Service wasn't found in the servers config.`);
 				return 'Function is not configured in game server configs';
 			}
 
@@ -241,16 +241,23 @@ function action(message, order, service) {
 
 			return result;
 		}
+
+		if (actionReference == 'update_heimdall') {
+			action(message, 'stop', 'heimdall');
+			action(message, 'pull', 'heimdall');
+			action(message, 'start', 'heimdall');
+			return result;
+		}
 	}
 
 	// If the action exists
-	if (Object.keys(actions).indexOf(action) > -1) {
-		let command = actions[action];
+	if (Object.keys(actions).indexOf(actionReference) > -1) {
+		let command = actions[actionReference];
 
 		if (typeof command === 'string') {
 			exec(command, (error, stdout, stderror) => {
 				if (error) {
-					log('error', `[${action}]: ${error}`);
+					log('error', `[${actionReference}]: ${error}`);
 					message.channel.send(`Error from server:\n\`\`\`\n ${error}\n\`\`\``);
 					return;
 				}
