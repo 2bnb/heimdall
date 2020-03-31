@@ -244,10 +244,10 @@ function action(message, order, service) {
 		}
 
 		if (actionReference == 'update_heimdall') {
-			action(message, 'stop', 'heimdall');
 			result = action(message, 'pull', 'heimdall') !== actionExecutedMessage
 			? message.channel.send('Heindall failed to update')
 			: message.channel.send('Heimdall has been updated');
+			action(message, 'stop', 'heimdall');
 			action(message, 'start', 'heimdall');
 			return result;
 		}
