@@ -11,14 +11,16 @@
 			"status": "Check the status of the Arma 3 Operations server"
 		},
 		"nco": {
-			"start": "Start a particular service.\nUse: `!start [service]`\nServices to choose from:\n- arma\n- arma_hc\n- teamspeak\n- reddit",
-			"stop": "Stop a particular service.\nUse: `!stop [service]`\nServices to choose from:\n- arma\n- arma_hc\n- teamspeak\n- reddit"
+			"start": "Start a particular service.\nUse: `!start [service]`\nServices to choose from:\n- `forest`: The Forest server\n- `dcs`: The DCS server",
+			"stop": "Stop a particular service.\nUse: `!stop [service]`\nServices to choose from:\n- Under construction"
 		},
-		"command": {}
+		"command": {
+			"update": "Under construction"
+		}
 	},
 	"roleIds": {
 		"member": "541739531821383691",
-		"nco": "585418610688917504",
+		"nco": "684153326283128963",
 		"command": "532684379206451201"
 	},
 	"pongs": ["Pong!", "Whoosh!", "Ouch!"],
