@@ -350,10 +350,10 @@ bot.on('message', message => {
 				if (toSay) {
 					message.channel.send(toSay);
 					message.delete();
-					result = ['info', 'Message regurgitated...'];
+					result = ['info', `Message by ${message.author.tag} regurgitated...`];
 				} else {
 					message.channel.send('You didn\'t give me anything to say...');
-					result = ['warn', 'Nohing given to regurgitate...'];
+					result = ['warn', 'Nothing given to regurgitate...'];
 				}
 				break;
 
