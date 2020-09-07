@@ -1,11 +1,19 @@
 const {Client, RichEmbed} = require('discord.js');
 const {exec, spawn} = require('child_process');
 const http = require('http');
+const parseArgs = require('string-argv').parseArgsStringToArgv;
+
 const config = require('./config.json');
 const db = require('./data.json');
-const {ArmaManager} = require('./modules/index.js');
+const serverManagerClasses = require('./modules/index.js');
+let serverManagers = {};
 
-const armaServers = new ArmaManager();
+
+// Register each of the server modules into the object for automated referencing
+for (var i = 0; i < Object.values(serverManagerClasses).length; i++) {
+	let instance = new serverManagerClasses[Object.values(serverManagerClasses)[i].name];
+	serverManagers[instance.game] = instance;
+}
 
 
 // Are we in development mode?
@@ -96,7 +104,7 @@ function notify(message, channel = 'log') {
 }
 
 // Listen for commands from the local computer
-const server = new http.createServer((request, response) => {
+const httpServer = new http.createServer((request, response) => {
 	let connection = request.socket;
 	log('info', `Client ${connection.remoteAddress}:${connection.remotePort} connected`);
 
@@ -115,8 +123,8 @@ const server = new http.createServer((request, response) => {
 					log('error', 'Port in use, retrying...');
 
 					setTimeout(() => {
-						server.close();
-						server.listen(db.notifications.port, () => {
+						httpServer.close();
+						httpServer.listen(db.notifications.port, () => {
 							log('info', `Listening to port ${db.notifications.port}`);
 						});
 					}, 1000);
@@ -153,7 +161,7 @@ const server = new http.createServer((request, response) => {
 	}
 });
 
-server.listen(db.notifications.port, () => {
+httpServer.listen(db.notifications.port, () => {
 	log('info', `Listening to port ${db.notifications.port}`);
 });
 
@@ -206,43 +214,6 @@ function action(message, order, service) {
 	let actionExecutedMessage = 'Action has been executed.';
 
 	if (service) {
-		if (service.indexOf('arma') > -1) {
-			armaServers.updatePointers();
-
-			if (service == 'arma') {
-				service = 'armaOps';
-			}
-
-			if (!config.servers.hasOwnProperty(service)) {
-				log('error',`[${actionReference}]: Service wasn't found in the servers config.`);
-				return 'Function is not configured in game server configs';
-			}
-
-			if (order == 'start') {
-				let instance = armaServers.start(service);
-				                                 console.log(instance);
-				// if (armaServers.isAlive(instance.process.pid)) {
-					result = 'Arma server started with PID ' + instance.process.pid;
-				// }
-			}
-
-			if (order == 'stop') {
-				armaServers.stop(service);
-				result = `Stopping all ${service} servers`;
-			}
-
-			if (order == 'status') {
-				result = `Found ${armaServers.instances.length} servers online:\n`;
-				armaServers.instances.forEach(instance => {
-					result += `\t- ${instance.nicename}\n`;
-				});
-				// Make this able to check individually once multiple arguments are parsable
-				// result = armaServers.isAlive(service) ? 'Online' : 'Offline';
-			}
-
-			return result;
-		}
-
 		if (actionReference == 'update_heimdall') {
 			result = action(message, 'pull', 'heimdall') !== actionExecutedMessage
 			? message.channel.send('Heindall failed to update')
@@ -283,11 +254,10 @@ function action(message, order, service) {
 	return result;
 }
 
-function getFlags(string, limit) {
-	if (limit == undefined) { limit = 2 };
-	let flags = string.split(' ', limit);
-	flags.shift();
-	return flags;
+function getArgs(string, raw = false) {
+	let args = parseArgs(string);
+	args[0] = raw ? args[0] : args[0].substring(db.commandPrefix.length);
+	return args;
 }
 
 bot.on('message', message => {
@@ -304,17 +274,16 @@ bot.on('message', message => {
 		let hasCommandRole = message.member.roles.has(db.roleIds.command);
 		let hasNcoRole = message.member.roles.has(db.roleIds.nco);
 		let hasMemberRole = message.member.roles.has(db.roleIds.member);
-		let args = message.content.substring(db.commandPrefix.length).split(' ');
-		let cmd = args[0];
+		let args = getArgs(message.content);
+		let arguments = { command: args[0] };
 		let result = [];
 		let service;
-		log('info', `Command \`${db.commandPrefix}${cmd}\` was called: "${message.content}"`);
+		log('info', `Command \`${db.commandPrefix}${arguments.command}\` was called: "${message.content}"`);
 
-		args = args.splice(1);
 		////////////
 		// Public //
 		////////////
-		switch(cmd) {
+		switch(arguments.command) {
 			// Command: `!help`
 			// Description: Display available commands, or the help for a single command
 			// 		if specified
@@ -325,7 +294,7 @@ bot.on('message', message => {
 				let helpMessage = new RichEmbed()
 					.setTitle('Heimdall\'s help')
 					.setColor(0xFF0000)
-					.setDescription(helpFormat(args[0], message.member.roles));
+					.setDescription(helpFormat(args[1], message.member.roles));
 				message.channel.send(helpMessage);
 				result = ['info', 'Help given...'];
 				break;
@@ -375,13 +344,13 @@ bot.on('message', message => {
 		// @Member and higher //
 		////////////////////////
 		if (hasMemberRole) {
-			switch(cmd) {
+			switch(arguments.command) {
 				// Command: `!status`
 				// Description: Display the status of the Operations server
 				// Use: `!status
 				// Author: Arend
 				case 'status':
-					let singularServer = action(message, 'status', getFlags(message.content)[0]);
+					let singularServer = action(message, 'status', args[1]);
 					singularServer = singularServer !== 'Action does not exist' ? singularServer : '';
 					message.channel.send([
 						singularServer,
@@ -397,25 +366,78 @@ bot.on('message', message => {
 			// @NCO and higher //
 			/////////////////////
 			if (hasNcoRole || hasCommandRole) {
-				switch(cmd) {
+				switch(arguments.command) {
+				// Command: `!run`
+				// Description: Run the given action (configured as commandlines in config.json)
+				// Use: `!run [action]`
+				// Author: Arend
+				case 'run':
+					let action = args[1];
+					message.channel.send(action(message, 'start', action));
+					result = ['info', `Action start_${action} executed...`];
+					break;
+
 				// Command: `!start`
-				// Description: Start the given service
-				// Use: `!start [service]`
+				// Description: Start the given game server
+				// Use: `!start [game] [serverProfile]`
+				// Args:
+				// 		0: command
+				// 		1: game - The ID of the game (name, basically)
+				// 		2: serverProfile - The name of the server profile saved by FASTER
 				// Author: Arend
 				case 'start':
-					service = getFlags(message.content)[0];
-					message.channel.send(action(message, 'start', service));
-					result = ['info', `Action start_${service} executed...`];
+					arguments = {
+						game: args[1],
+						serverProfile: args[2]
+					};
+
+					if (!serverManagers.hasOwnProperty(arguments.game)) {
+						message.channel.send(`Failed to start any ${arguments.game} instance, since that game isn't configured yet.`);
+						result = ['error', `Failed to start any ${arguments.game} instance, there isn't any configured in config.js yet.`];
+						break;
+					}
+
+					arguments.game = arguments.game.toLowerCase();
+					let instances = serverManagers[arguments.game].start(arguments.serverProfile);
+
+					if (!instances) {
+						message.channel.send(`Failed to start any ${arguments.game} instances, please contact your lord a saviour for some diving intervention.`);
+						result = ['error', `Failed to start any ${arguments.game} instances. Profile: ${arguments.serverProfile}.`];
+						break;
+					}
+
+					message.channel.send(`Spun up ${instances.length} ${arguments.game} servers. Profile: ${arguments.serverProfile}`);
+					result = [
+						'info',
+						`Spun up ${arguments.game} instances from profile ${arguments.serverProfile}:\n
+							${instances.forEach((instance, i) => '\t' + i + ': ' + instance.pid + (instance.headless ? ', headless client.' : ', server.'))}
+					`];
 					break;
 
 				// Command: `!stop`
-				// Description: stop the given service
-				// Use: `!stop [service]`
+				// Description: stop the given games server
+				// Use: `!stop [game] [serverProfile]`
+				// Args:
+				// 		0: command
+				// 		1: game - The ID of the game (name, basically)
+				// 		2: serverProfile - The name of the server profile saved by FASTER
 				// Author: Arend
 				case 'stop':
-					service = getFlags(message.content)[0];
-					message.channel.send(action(message, 'stop', service));
-					result = ['info', `Action stop_${service} executed...`];
+					arguments = {
+						game: args[1],
+						serverProfile: args[2]
+					};
+
+					if (!serverManagers.hasOwnProperty(arguments.game)) {
+						message.channel.send(`Failed to stop any ${arguments.game} instance, since that game isn't configured yet.`);
+						result = ['error', `Failed to stop any ${arguments.game} instance, there isn't any configured in config.js yet.`];
+					}
+
+					arguments.game = arguments.game.toLowerCase();
+					let stoppedInstances = serverManagers[arguments.game].stop(arguments.serverProfile);
+
+					message.channel.send(`Shutdown ${stoppedInstances} ${arguments.game} servers. Profile: ${arguments.serverProfile}`);
+					result = ['info', `Shutdown ${stoppedInstances} ${arguments.game} instances`];
 					break;
 				}
 			}
@@ -424,13 +446,13 @@ bot.on('message', message => {
 			// @Command and higher //
 			/////////////////////////
 			if (hasCommandRole) {
-				switch(cmd) {
+				switch(arguments.command) {
 					// Command: `!update`
 					// Description: Update Heimdall to the latest commit on Github
 					// Use: `!update
 					// Author: Arend
 					case 'update':
-						service = getFlags(message.content)[0];
+						service = args[1];
 						message.channel.send(action(message, 'update', 'heimdall'));
 						result = ['info', `Action update_heimdall executed...`];
 						break;
@@ -440,7 +462,7 @@ bot.on('message', message => {
 
 		if (result.length == 0) {
 			message.channel.send('Speak up you laggard!');
-			result = ['info', `Command \`!${cmd}\` not understood...`];
+			result = ['info', `Command \`!${arguments.command}\` not understood...`];
 		}
 
 		log(result[0], `Command result: ${result[1]}`);

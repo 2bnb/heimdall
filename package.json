@@ -24,6 +24,7 @@
   "dependencies": {
     "arma-server": "git+https://github.com/2bnb/node-arma-server.git",
     "discord.js": "^11.5.1",
-    "ps-list": "^7.0.0"
+    "ps-list": "^7.0.0",
+    "string-argv": "^0.3.1"
   }
 }

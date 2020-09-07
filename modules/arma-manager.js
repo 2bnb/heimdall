@@ -1,114 +1,93 @@
 /**
- * Arma specific server driver which handles server and headless client
- * instances.
+ * Arma specific server driver which handles command lines that are exported
+ * from the FASTER server management software.
+ * FASTER: https://github.com/Foxlider/FASTER
  *
- * Features:
+ * Public Features:
  * - this.start - Start an instance
  * - this.stop - Stop an instance
- * - this.isAlive - Check an instance is still running
+ * - this.status - Return running instances and their data
  * - this.updatePointers - Update `this.instances` with instances that are
- *                         actually running on the server
+ *                         actually running on the server, removing dead ones
  *
  * @author Arend
  */
 const fs = require('fs');
-const logPath = 'logs/arma.log';
+const path = require('path');
+const {spawn} = require('child_process');
+// const logPath = '../logs/arma.log';
 const psList = require('ps-list');
+const parseArgs = require('string-argv').parseArgsStringToArgv;
 
-const out = fs.openSync(logPath, 'a');
-const err = fs.openSync(logPath, 'a');
+// const out = fs.openSync(logPath, 'a');
+// const err = fs.openSync(logPath, 'a');
 
 const config = require('../config.json');
-const ArmaServer = require('arma-server').Server;
-const ArmaHeadless = require ('arma-server').Headless;
 
-const ArmaManager = function() {
-};
+const ArmaManager = function() {};
 
+/**
+ * The game that this server belongs to.
+ *
+ * @type {String}
+ */
+ArmaManager.prototype.game = 'arma';
+
+/**
+ * Array of known instances.
+ *
+ * @type {Array}
+ */
 ArmaManager.prototype.instances = [];
 
 /**
  * Start an instance of the server, using the appropriate settings
  *
- * @param  {String} serverName The name of the options in config.json
- * @return {Object}            The object containing instance data in the format
- *                             {name,type,options,process}
+ * @param  {String} serverProfile The name of the server profile saved by FASTER
+ * @return {Object}               The object containing instance data in the format
+ *                                {name,nicename,type,options,process}
  */
-ArmaManager.prototype.start = function(serverName) {
-	if (typeof serverName !== 'string') {
-		console.log('No server given when instantiating ArmaManager! Server name: ', serverName);
+ArmaManager.prototype.start = function(serverProfile) {
+	this.updatePointers();
+
+	if (typeof serverProfile !== 'string') {
+		console.log('No server given when instantiating ArmaManager! Server name: ', serverProfile);
+		// TODO: Execute all
 		return false;
 	}
 
-	let serverConfig = config.servers[serverName];
-	let serverOptions = {
-		...config.defaultServerSettings.arma.options,
-		...serverConfig.options,
-	};
+	let serverCommandlines = this.getCommandlines(serverProfile); // Returns an array of command lines as strings to execute
+	let instances = [];
 
-	// Start the actual server
-	let server = null;
-	if (serverConfig.type == 'headless') {
-		server = new ArmaHeadless(serverOptions);
-	} else {
-		serverConfig.type = 'server';
-		server = new ArmaServer(serverOptions);
-		server.writeServerConfig();
-	}
-	console.log('Type: ', serverConfig.type, 'Server instance: ', server);
-
-	instance = {
-		name: serverName,
-		nicename: serverConfig.nicename,
-		type: serverConfig.type,
-		options: serverOptions,
-		process: server.start()
-	};
-
-	// Save the server details for later use
-	this.instances.push(instance);
-
-	// instance.stdout.on('data', function (data) {
-	// 	console.log(data);
-	// });
-
-	// instance.stderr.on('data', function (data) {
-	// 	console.log(data);
-	// });
-
-	let parent = this;
-	instance.process.on('close', function (code) {
-		console.log(`The ${instance.name} ${instance.type} with PID ${this.pid} was closed: ${code}`);
-		parent.updatePointers();
+	serverCommandlines.forEach(commandline => {
+		instances.push(this.executeServer(serverProfile, commandline));
 	});
 
-	instance.process.on('error', function (err) {
-		console.log(`${instance.name} ${instance.type} with PID ${this.pid} errored: ${err}`);
-		parent.updatePointers();
-	});
-
-	return instance;
+	return instances;
 };
 
 /**
- * Stop all instances related to the serverName
+ * Stop all instances related to the serverProfile
  *
- * @param  {String} serverName The name of the server collection
- *                             Additional names possible:
- *                             "all" - all instances that are still running
- *                             "unknown" - any instances found that were not
+ * @param  {String} serverProfile The name of the server profile
+ *                                Additional names possible:
+ *                                "all" - all instances that are still running
+ *                                "unknown" - any instances found that were not
  *                                         started by this module
- * @return {Number}            The number of instances stopped
+ * @return {Number}               The number of instances stopped
  */
-ArmaManager.prototype.stop = function(serverName) {
-	console.log(`Killing all instances of "${serverName}"`);
-	if (serverName == 'all') {
+ArmaManager.prototype.stop = function(serverProfile = 'all') {
+	this.updatePointers();
+
+	console.log(`Killing all instances of "${serverProfile}"`);
+	if (serverProfile == 'all') {
 		this.instances.forEach(instance => {
+			console.log(serverProfile, this.instances);
 			console.log(process.kill(-instance.process.pid));
 		});
 	} else {
 		this.instances.forEach(instance => {
-			if (instance.name === serverName) {
+			if (instance.name === serverProfile) {
 				console.log(process.kill(-instance.process.pid));
 			}
 		});
@@ -163,9 +142,9 @@ ArmaManager.prototype.updatePointers = function() {
 		let newInstances = [];
 		processes.forEach(process => {
 			let instance = {
-				name: 'unknown',
-				nicename: 'Arma server',
-				type: 'server',
+				profile: 'unknown',
+				headless: false,
+				options: [],
 				process: process
 			};
 			if (!this.instances.find(item => item.process.pid == process.pid)) {
@@ -179,7 +158,7 @@ ArmaManager.prototype.updatePointers = function() {
 			console.log('Updated instances with unknown ones: ', newInstances);
 		}
 	})(this.instances);
-}
+};
 
 /**
  * Cleans up `this.instances`, removing any instances that aren't running anymore
@@ -199,6 +178,81 @@ ArmaManager.prototype.cleanPointers = function() {
 	);
 
 	return pointersRemoved;
-}
+};
+
+/**
+ * Converts commandlines for the appropriate `serverProfile` to an array of
+ * arguments.
+ *
+ * @param  {String} serverProfile The name of the server profile saved by FASTER
+ * @return {Array}                The commandlines to be executed
+ */
+ArmaManager.prototype.getCommandlines = function(serverProfile) {
+	let commandlines = (fs.readFileSync('configs/arma3.config', 'utf8')).split('\n');
+
+	return commandlines = commandlines.filter((commandline) => {
+		let profileName = path.basename(
+			commandline
+				.substring(
+					commandline.indexOf('-profiles=') + 10,
+					commandline.indexOf(' -', commandline.indexOf('-profiles=')))
+				.replace('_',' ')
+				.replace('"', '')
+		);
+
+		// TODO: allow aliases
+		return profileName == serverProfile;
+	});
+};
+
+/**
+ * Executes the executable file with the parsed commandlines per requested
+ * server.
+ *
+ * @param  {String} serverProfile The name of the server profile saved by FASTER
+ * @param  {String} commandline   Commandline arguments per server that need
+ *                                to be launched
+ * @return {Object}               Server instance data including the resultant
+ *                                process
+ */
+ArmaManager.prototype.executeServer = function(serverProfile, commandline) {
+	let serverArgs = parseArgs(commandline);
+	console.log(commandline, serverArgs);
+
+	// Start the actual server
+	let server = spawn(
+		path.join(config.serverEnvironments.arma.path, config.serverEnvironments.arma.executable),
+		serverArgs,
+		{
+			env: process.env,
+			detached: true,
+			stdio: 'ignore'
+		}
+	);
+	console.log('Is headless: ', serverArgs.includes("-client"), 'Server instance: ', server);
+
+	let instance = {
+		profile: serverProfile,
+		headless: serverArgs.includes('-client'),
+		options: serverArgs,
+		process: server
+	};
+
+	// Save the server details for later use
+	this.instances.push(instance);
+
+	let parent = this;
+	instance.process.on('close', function (code) {
+		console.log(`The ${instance.name} ${instance.headless} with PID ${this.pid} was closed: ${code}`);
+		parent.updatePointers();
+	});
+
+	instance.process.on('error', function (err) {
+		console.log(`${instance.name} ${instance.headless} with PID ${this.pid} errored: ${err}`);
+		parent.updatePointers();
+	});
+
+	return instance;
+};
 
 module.exports = ArmaManager;
