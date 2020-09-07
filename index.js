@@ -278,6 +278,7 @@ bot.on('message', message => {
 		let arguments = { command: args[0] };
 		let result = [];
 		let service;
+		let formattedMessage;
 		log('info', `Command \`${db.commandPrefix}${arguments.command}\` was called: "${message.content}"`);
 
 		////////////
@@ -398,20 +399,25 @@ bot.on('message', message => {
 					}
 
 					arguments.game = arguments.game.toLowerCase();
-					let instances = serverManagers[arguments.game].start(arguments.serverProfile);
+					let driver = serverManagers[arguments.game].start(arguments.serverProfile);
 
-					if (!instances) {
+					if (!driver.instances || driver.instances.length <= 0) {
 						message.channel.send(`Failed to start any ${arguments.game} instances, please contact your lord a saviour for some diving intervention.`);
 						result = ['error', `Failed to start any ${arguments.game} instances. Profile: ${arguments.serverProfile}.`];
 						break;
 					}
 
-					message.channel.send(`Spun up ${instances.length} ${arguments.game} servers. Profile: ${arguments.serverProfile}`);
+					formattedMessage = new RichEmbed()
+						.setTitle('Technical jargon')
+						.setColor(config.serverEnvironments[arguments.game].colour)
+						.setDescription(driver.message);
+
+					message.channel.send(`Spun up ${driver.instances.length} ${arguments.game} servers. Profile: ${arguments.serverProfile}`);
+					message.channel.send(formattedMessage);
+
 					result = [
 						'info',
-						`Spun up ${arguments.game} instances from profile ${arguments.serverProfile}:\n
-							${instances.forEach((instance, i) => '\t' + i + ': ' + instance.pid + (instance.headless ? ', headless client.' : ', server.'))}
-					`];
+						`Spun up ${driver.instances.length} ${arguments.game} instances from profile ${arguments.serverProfile}:\n${driver.log}`];
 					break;
 
 				// Command: `!stop`

@@ -63,7 +63,19 @@ ArmaManager.prototype.start = function(serverProfile) {
 		instances.push(this.executeServer(serverProfile, commandline));
 	});
 
-	return instances;
+	let message = '';
+	let log = '';
+
+	instances.forEach((instance, i) => {
+		message += `${i}: **${instance.profile}** type: ${instance.headless ? `headless client` : `server`}, port: ${instance.options.find(option => option.indexOf('-port') > -1).replace('-port=','')}, pid: ${instance.process.pid}.\n`;
+		log += `\t${i}: { profile: ${instance.profile},\nheadless: ${instance.headless},\noptions: ${instance.options},\nprocess: ${instance.process.pid} },\n`;
+	});
+
+	return {
+		instances: instances,
+		message: message,
+		log: log
+	};
 };
 
 /**
@@ -79,21 +91,26 @@ ArmaManager.prototype.start = function(serverProfile) {
 ArmaManager.prototype.stop = function(serverProfile = 'all') {
 	this.updatePointers();
 
+	let killing = 0;
 	console.log(`Killing all instances of "${serverProfile}"`);
 	if (serverProfile == 'all') {
 		this.instances.forEach(instance => {
-			console.log(serverProfile, this.instances);
-			console.log(process.kill(-instance.process.pid));
+			if (process.kill(instance.process.pid)) {
+				killing += 1;
+			}
 		});
 	} else {
 		this.instances.forEach(instance => {
-			if (instance.name === serverProfile) {
-				console.log(process.kill(-instance.process.pid));
+			if (instance.profile === serverProfile) {
+				if (process.kill(instance.process.pid)) {
+					killing += 1;
+				}
 			}
 		});
 	}
 
-	return this.cleanPointers();
+	this.cleanPointers();
+	return killing;
 };
 
 /**
@@ -114,7 +131,7 @@ ArmaManager.prototype.isAlive = function(childProcess) {
 
 	if (typeof childProcess === 'string') {
 		console.log('Tried to use string to check if server is alive: ', childProcess);
-		pid = (this.instances.find(instance => instance.name == childProcess)).process.pid;
+		pid = (this.instances.find(instance => instance.profile == childProcess)).process.pid;
 	}
 
 	try {
@@ -137,7 +154,7 @@ ArmaManager.prototype.updatePointers = function() {
 
 	(async () => {
 		list = await psList();
-		processes = list.filter(instance => instance.name == 'arma3server_x64.exe');
+		processes = list.filter(process => process.name == 'arma3server_x64.exe');
 
 		let newInstances = [];
 		processes.forEach(process => {
@@ -243,12 +260,12 @@ ArmaManager.prototype.executeServer = function(serverProfile, commandline) {
 
 	let parent = this;
 	instance.process.on('close', function (code) {
-		console.log(`The ${instance.name} ${instance.headless} with PID ${this.pid} was closed: ${code}`);
+		console.log(`The ${instance.profile} ${instance.headless ? 'headless client' : 'server'} with PID ${this.pid} was closed: ${code}`);
 		parent.updatePointers();
 	});
 
 	instance.process.on('error', function (err) {
-		console.log(`${instance.name} ${instance.headless} with PID ${this.pid} errored: ${err}`);
+		console.log(`${instance.profile} ${instance.headless ? 'headless client' : 'server'} with PID ${this.pid} errored: ${err}`);
 		parent.updatePointers();
 	});
 
