@@ -207,31 +207,26 @@ function helpFormat(command, roles) {
 /////////////////////////////
 // Execute action commands //
 /////////////////////////////
-function action(message, order, service) {
+function action(message, actionName) {
 	let actions = config.actions;
-	let actionReference = order + '_' + service;
 	let result = '';
 	let actionExecutedMessage = 'Action has been executed.';
 
-	if (service) {
-		if (actionReference == 'update_heimdall') {
-			result = action(message, 'pull', 'heimdall') !== actionExecutedMessage
-			? message.channel.send('Heindall failed to update')
-			: message.channel.send('Heimdall has been updated');
-			action(message, 'stop', 'heimdall');
-			action(message, 'start', 'heimdall');
-			return result;
-		}
+	if (actionName == 'update_heimdall') {
+		result = action(message, 'pull_heimdall') !== actionExecutedMessage
+		? message.channel.send('Heimdall failed to update')
+		: message.channel.send('Heimdall has been updated');
+		return result;
 	}
 
 	// If the action exists
-	if (Object.keys(actions).indexOf(actionReference) > -1) {
-		let command = actions[actionReference];
+	if (Object.keys(actions).indexOf(actionName) > -1) {
+		let command = actions[actionName];
 
 		if (typeof command === 'string') {
 			exec(command, (error, stdout, stderror) => {
 				if (error) {
-					log('error', `[${actionReference}]: ${error}`);
+					log('error', `[${actionName}]: ${error}`);
 					message.channel.send(`Error from server:\n\`\`\`\n ${error}\n\`\`\``);
 					return;
 				}
@@ -248,12 +243,25 @@ function action(message, order, service) {
 
 		result = actionExecutedMessage;
 	} else {
-		result = 'Action does not exist';
+		result = 'Action does not exist.';
 	}
 
 	return result;
 }
 
+////////////////////////////////////////////
+// Return formatted message ready to send //
+////////////////////////////////////////////
+function embed(title, description, color = 0xFF0000) {
+	return new RichEmbed()
+		.setTitle(title)
+		.setColor(color)
+		.setDescription(description);
+}
+
+/////////////////////////////////
+// Get Arguments into an array //
+/////////////////////////////////
 function getArgs(string, raw = false) {
 	let args = parseArgs(string);
 	args[0] = raw ? args[0] : args[0].substring(db.commandPrefix.length);
@@ -277,7 +285,6 @@ bot.on('message', message => {
 		let args = getArgs(message.content);
 		let arguments = { command: args[0] };
 		let result = [];
-		let service;
 		let formattedMessage;
 		log('info', `Command \`${db.commandPrefix}${arguments.command}\` was called: "${message.content}"`);
 
@@ -292,11 +299,7 @@ bot.on('message', message => {
 			// Author: Arend
 			case 'help':
 				log('info', message.member.roles);
-				let helpMessage = new RichEmbed()
-					.setTitle('Heimdall\'s help')
-					.setColor(0xFF0000)
-					.setDescription(helpFormat(args[1], message.member.roles));
-				message.channel.send(helpMessage);
+				message.channel.send(embed('Heimdall\'s help', helpFormat(args[1], message.member.roles)));
 				result = ['info', 'Help given...'];
 				break;
 
@@ -329,14 +332,18 @@ bot.on('message', message => {
 
 			// Command: `!embed`
 			// Description: Display the given content as an embedded message
-			// Use: `!embed [title]-[description]`
+			// Use: `!embed [title]\n[description]`
 			// Author: Arend
 			case 'embed':
-				let embed = new RichEmbed()
-					.setTitle(message.content.substring(db.commandPrefix.length + 6, message.content.indexOf('-')))
-					.setColor(0xFF0000)
-					.setDescription(message.content.substring(message.content.indexOf('-') + 1));
-				message.channel.send(embed);
+				Object.assign(arguments, {
+					title: message.content.substring(
+						db.commandPrefix.length + arguments.command.length,
+						message.content.indexOf('\n')
+					),
+					description: message.content.substring(message.content.indexOf('\n') + 1)
+				});
+
+				message.channel.send(embed(arguments.title, arguments.description));
 				result = ['info', 'Embedded message sent...'];
 				break;
 		}
@@ -351,7 +358,7 @@ bot.on('message', message => {
 				// Use: `!status
 				// Author: Arend
 				case 'status':
-					let singularServer = action(message, 'status', args[1]);
+					let singularServer = action(message, `status_${args[1]}`);
 					singularServer = singularServer !== 'Action does not exist' ? singularServer : '';
 					message.channel.send([
 						singularServer,
@@ -373,9 +380,12 @@ bot.on('message', message => {
 				// Use: `!run [action]`
 				// Author: Arend
 				case 'run':
-					let action = args[1];
-					message.channel.send(action(message, 'start', action));
-					result = ['info', `Action start_${action} executed...`];
+					Object.assign(arguments, {
+						action: args[1]
+					});
+
+					message.channel.send(action(message, arguments.action));
+					result = ['info', `Action ${action} executed...`];
 					break;
 
 				// Command: `!start`
@@ -387,10 +397,10 @@ bot.on('message', message => {
 				// 		2: serverProfile - The name of the server profile saved by FASTER
 				// Author: Arend
 				case 'start':
-					arguments = {
+					Object.assign(arguments, {
 						game: args[1],
 						serverProfile: args[2]
-					};
+					});
 
 					if (!serverManagers.hasOwnProperty(arguments.game)) {
 						message.channel.send(`Failed to start any ${arguments.game} instance, since that game isn't configured yet.`);
@@ -407,13 +417,8 @@ bot.on('message', message => {
 						break;
 					}
 
-					formattedMessage = new RichEmbed()
-						.setTitle('Technical jargon')
-						.setColor(config.serverEnvironments[arguments.game].colour)
-						.setDescription(driver.message);
-
 					message.channel.send(`Spun up ${driver.instances.length} ${arguments.game} servers. Profile: ${arguments.serverProfile}`);
-					message.channel.send(formattedMessage);
+					message.channel.send(ebmed('Technical jargon', driver.message, config.serverEnvironments[arguments.game].colour));
 
 					result = [
 						'info',
@@ -429,10 +434,10 @@ bot.on('message', message => {
 				// 		2: serverProfile - The name of the server profile saved by FASTER
 				// Author: Arend
 				case 'stop':
-					arguments = {
+					Object.assign(arguments, {
 						game: args[1],
 						serverProfile: args[2]
-					};
+					});
 
 					if (!serverManagers.hasOwnProperty(arguments.game)) {
 						message.channel.send(`Failed to stop any ${arguments.game} instance, since that game isn't configured yet.`);
@@ -458,8 +463,7 @@ bot.on('message', message => {
 					// Use: `!update
 					// Author: Arend
 					case 'update':
-						service = args[1];
-						message.channel.send(action(message, 'update', 'heimdall'));
+						message.channel.send(action(message, 'update_heimdall'));
 						result = ['info', `Action update_heimdall executed...`];
 						break;
 				}

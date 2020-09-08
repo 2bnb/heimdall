@@ -5,17 +5,18 @@
 			"help": "Ask Heimdall to teach you his ways... `[command]` is optional.\nUse: `!help [command]`",
 			"ping": "Ping Heimdall and hope he honours you with a response.\nUse: `!ping`",
 			"say": "Ask Heimdall to say something for you.\nUse: `!say [message]`",
-			"embed": "Ask Heimdall to embed something for you. Anything before a \"-\" is the title, and after it is the description.\nUse: `!embed [title]-[description]`"
+			"embed": "Ask Heimdall to embed something for you. Anything before a newline is the title, and after it is the description.\nUse: `!embed [title]\n[description]`"
 		},
 		"member": {
-			"status": "Check the status of the Arma 3 Operations server"
+			"status": "Check the status of the Arma 3 servers.\nUse: `!status`"
 		},
 		"nco": {
-			"start": "Start a particular service.\nUse: `!start [service]`\nServices to choose from:\n- `forest`: The Forest server\n- `dcs`: The DCS server",
-			"stop": "Stop a particular service.\nUse: `!stop [service]`\nServices to choose from:\n- Under construction"
+			"run": "Execute a particular command configured on the server.\nUse: `!start [command_preset]`",
+			"start": "Start a particular server profile. I.e. `!start arma \"Operations Server\"`.\nUse: `!start [server] [server_profile]`\nServers to choose from:\n- `arma`: Arma 3 server",
+			"stop": "Stop a particular server or only a particular server profile. I.e. `!stop arma` or `!stop arma \"Operations Server\"`.\nUse: `!stop [server] [server_profile (optional)]`\nServers to choose from:\n- `arma`: Arma 3 servers"
 		},
 		"command": {
-			"update": "Under construction"
+			"update": "Update the Heimdall installation.\nUse: `!update`"
 		}
 	},
 	"roleIds": {
