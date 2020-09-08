@@ -252,7 +252,7 @@ function action(message, actionName) {
 ////////////////////////////////////////////
 // Return formatted message ready to send //
 ////////////////////////////////////////////
-function embed(title, description, color = 0xFF0000) {
+function embed(title, description = '', color = 0xFF0000) {
 	return new RichEmbed()
 		.setTitle(title)
 		.setColor(color)
@@ -335,12 +335,13 @@ bot.on('message', message => {
 			// Use: `!embed [title]\n[description]`
 			// Author: Arend
 			case 'embed':
+				let separator = message.content.indexOf('\n') > -1 ? message.content.indexOf('\n') : message.content.length;
 				Object.assign(arguments, {
 					title: message.content.substring(
 						db.commandPrefix.length + arguments.command.length,
-						message.content.indexOf('\n')
+						separator
 					),
-					description: message.content.substring(message.content.indexOf('\n') + 1)
+					description: message.content.substring(separator + 1)
 				});
 
 				message.channel.send(embed(arguments.title, arguments.description));
