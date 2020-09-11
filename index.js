@@ -413,7 +413,7 @@ bot.on('message', message => {
 					let driver = serverManagers[arguments.game].start(arguments.serverProfile);
 
 					if (!driver.instances || driver.instances.length <= 0) {
-						message.channel.send(`Failed to start any ${arguments.game} instances, please contact your lord a saviour for some diving intervention.`);
+						message.channel.send(`Failed to start any ${arguments.game} instances, please contact your lord a saviour for some divine intervention.`);
 						result = ['error', `Failed to start any ${arguments.game} instances. Profile: ${arguments.serverProfile}.`];
 						break;
 					}
