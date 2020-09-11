@@ -419,7 +419,7 @@ bot.on('message', message => {
 					}
 
 					message.channel.send(`Spun up ${driver.instances.length} ${arguments.game} servers. Profile: ${arguments.serverProfile}`);
-					message.channel.send(ebmed('Technical jargon', driver.message, config.serverEnvironments[arguments.game].colour));
+					message.channel.send(embed('Technical jargon', driver.message, config.serverEnvironments[arguments.game].colour));
 
 					result = [
 						'info',
