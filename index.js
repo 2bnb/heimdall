@@ -1,4 +1,4 @@
-const {Client, RichEmbed} = require('discord.js');
+const {Client, MessageEmbed} = require('discord.js');
 const {exec, spawn} = require('child_process');
 const http = require('http');
 const parseArgs = require('string-argv').parseArgsStringToArgv;
@@ -253,7 +253,7 @@ function action(message, actionName) {
 // Return formatted message ready to send //
 ////////////////////////////////////////////
 function embed(title, description = '', color = 0xFF0000) {
-	return new RichEmbed()
+	return new MessageEmbed()
 		.setTitle(title)
 		.setColor(color)
 		.setDescription(description);
@@ -279,10 +279,10 @@ bot.on('message', message => {
 			return;
 		}
 
-		let hasCommandRole = message.member.roles.has(db.roleIds.command);
-		let hasNcoRole = message.member.roles.has(db.roleIds.nco);
-		let hasServerDevRole = message.member.roles.has(db.roleIds.serverDev)
-		let hasMemberRole = message.member.roles.has(db.roleIds.member);
+		let hasCommandRole = message.member.roles.cache.has(db.roleIds.command);
+		let hasNcoRole = message.member.roles.cache.has(db.roleIds.nco);
+		let hasServerDevRole = message.member.roles.cache.has(db.roleIds.serverDev)
+		let hasMemberRole = message.member.roles.cache.has(db.roleIds.member);
 		let args = getArgs(message.content);
 		let arguments = { command: args[0] };
 		let result = [];
@@ -300,7 +300,7 @@ bot.on('message', message => {
 			// Author: Arend
 			case 'help':
 				log('info', message.member.roles);
-				message.channel.send(embed('Heimdall\'s help', helpFormat(args[1], message.member.roles)));
+				message.channel.send(embed('Heimdall\'s help', helpFormat(args[1], message.member.roles.cache)));
 				result = ['info', 'Help given...'];
 				break;
 
