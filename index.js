@@ -281,6 +281,7 @@ bot.on('message', message => {
 
 		let hasCommandRole = message.member.roles.has(db.roleIds.command);
 		let hasNcoRole = message.member.roles.has(db.roleIds.nco);
+		let hasServerDevRole = message.member.roles.has(db.roleIds.serverDev)
 		let hasMemberRole = message.member.roles.has(db.roleIds.member);
 		let args = getArgs(message.content);
 		let arguments = { command: args[0] };
@@ -374,83 +375,83 @@ bot.on('message', message => {
 			/////////////////////
 			// @NCO and higher //
 			/////////////////////
-			if (hasNcoRole || hasCommandRole) {
+			if (hasNcoRole || hasCommandRole || hasServerDevRole) {
 				switch(arguments.command) {
-				// Command: `!run`
-				// Description: Run the given action (configured as commandlines in config.json)
-				// Use: `!run [action]`
-				// Author: Arend
-				case 'run':
-					Object.assign(arguments, {
-						action: args[1]
-					});
+					// Command: `!run`
+					// Description: Run the given action (configured as commandlines in config.json)
+					// Use: `!run [action]`
+					// Author: Arend
+					case 'run':
+						Object.assign(arguments, {
+							action: args[1]
+						});
 
-					message.channel.send(action(message, arguments.action));
-					result = ['info', `Action ${action} executed...`];
-					break;
-
-				// Command: `!start`
-				// Description: Start the given game server
-				// Use: `!start [game] [serverProfile]`
-				// Args:
-				// 		0: command
-				// 		1: game - The ID of the game (name, basically)
-				// 		2: serverProfile - The name of the server profile saved by FASTER
-				// Author: Arend
-				case 'start':
-					Object.assign(arguments, {
-						game: args[1],
-						serverProfile: args[2]
-					});
-
-					if (!serverManagers.hasOwnProperty(arguments.game)) {
-						message.channel.send(`Failed to start any ${arguments.game} instance, since that game isn't configured yet.`);
-						result = ['error', `Failed to start any ${arguments.game} instance, there isn't any configured in config.js yet.`];
+						message.channel.send(action(message, arguments.action));
+						result = ['info', `Action ${action} executed...`];
 						break;
-					}
 
-					arguments.game = arguments.game.toLowerCase();
-					let driver = serverManagers[arguments.game].start(arguments.serverProfile);
+					// Command: `!start`
+					// Description: Start the given game server
+					// Use: `!start [game] [serverProfile]`
+					// Args:
+					// 		0: command
+					// 		1: game - The ID of the game (name, basically)
+					// 		2: serverProfile - The name of the server profile saved by FASTER
+					// Author: Arend
+					case 'start':
+						Object.assign(arguments, {
+							game: args[1],
+							serverProfile: args[2]
+						});
 
-					if (!driver.instances || driver.instances.length <= 0) {
-						message.channel.send(`Failed to start any ${arguments.game} instances, please contact your lord a saviour for some divine intervention.`);
-						result = ['error', `Failed to start any ${arguments.game} instances. Profile: ${arguments.serverProfile}.`];
+						if (!serverManagers.hasOwnProperty(arguments.game)) {
+							message.channel.send(`Failed to start any ${arguments.game} instance, since that game isn't configured yet.`);
+							result = ['error', `Failed to start any ${arguments.game} instance, there isn't any configured in config.js yet.`];
+							break;
+						}
+
+						arguments.game = arguments.game.toLowerCase();
+						let driver = serverManagers[arguments.game].start(arguments.serverProfile);
+
+						if (!driver.instances || driver.instances.length <= 0) {
+							message.channel.send(`Failed to start any ${arguments.game} instances, please contact your lord a saviour for some divine intervention.`);
+							result = ['error', `Failed to start any ${arguments.game} instances. Profile: ${arguments.serverProfile}.`];
+							break;
+						}
+
+						message.channel.send(`Spun up ${driver.instances.length} ${arguments.game} servers. Profile: ${arguments.serverProfile}`);
+						message.channel.send(embed('Technical jargon', driver.message, config.serverEnvironments[arguments.game].colour));
+
+						result = [
+							'info',
+							`Spun up ${driver.instances.length} ${arguments.game} instances from profile ${arguments.serverProfile}:\n${driver.log}`];
 						break;
-					}
 
-					message.channel.send(`Spun up ${driver.instances.length} ${arguments.game} servers. Profile: ${arguments.serverProfile}`);
-					message.channel.send(embed('Technical jargon', driver.message, config.serverEnvironments[arguments.game].colour));
+					// Command: `!stop`
+					// Description: stop the given games server
+					// Use: `!stop [game] [serverProfile]`
+					// Args:
+					// 		0: command
+					// 		1: game - The ID of the game (name, basically)
+					// 		2: serverProfile - The name of the server profile saved by FASTER
+					// Author: Arend
+					case 'stop':
+						Object.assign(arguments, {
+							game: args[1],
+							serverProfile: args[2]
+						});
 
-					result = [
-						'info',
-						`Spun up ${driver.instances.length} ${arguments.game} instances from profile ${arguments.serverProfile}:\n${driver.log}`];
-					break;
+						if (!serverManagers.hasOwnProperty(arguments.game)) {
+							message.channel.send(`Failed to stop any ${arguments.game} instance, since that game isn't configured yet.`);
+							result = ['error', `Failed to stop any ${arguments.game} instance, there isn't any configured in config.js yet.`];
+						}
 
-				// Command: `!stop`
-				// Description: stop the given games server
-				// Use: `!stop [game] [serverProfile]`
-				// Args:
-				// 		0: command
-				// 		1: game - The ID of the game (name, basically)
-				// 		2: serverProfile - The name of the server profile saved by FASTER
-				// Author: Arend
-				case 'stop':
-					Object.assign(arguments, {
-						game: args[1],
-						serverProfile: args[2]
-					});
+						arguments.game = arguments.game.toLowerCase();
+						let stoppedInstances = serverManagers[arguments.game].stop(arguments.serverProfile);
 
-					if (!serverManagers.hasOwnProperty(arguments.game)) {
-						message.channel.send(`Failed to stop any ${arguments.game} instance, since that game isn't configured yet.`);
-						result = ['error', `Failed to stop any ${arguments.game} instance, there isn't any configured in config.js yet.`];
-					}
-
-					arguments.game = arguments.game.toLowerCase();
-					let stoppedInstances = serverManagers[arguments.game].stop(arguments.serverProfile);
-
-					message.channel.send(`Shutdown ${stoppedInstances} ${arguments.game} servers. Profile: ${arguments.serverProfile}`);
-					result = ['info', `Shutdown ${stoppedInstances} ${arguments.game} instances`];
-					break;
+						message.channel.send(`Shutdown ${stoppedInstances} ${arguments.game} servers. Profile: ${arguments.serverProfile}`);
+						result = ['info', `Shutdown ${stoppedInstances} ${arguments.game} instances`];
+						break;
 				}
 			}
 
