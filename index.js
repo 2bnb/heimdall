@@ -346,7 +346,8 @@ bot.on('message', message => {
 						description: message.content.substring(separator + 1)
 					});
 
-					message.channel.send(embed(arguments.title, arguments.description));
+					let randomColour = Math.floor(Math.random()*16777215).toString(16);
+					message.channel.send(embed(arguments.title, arguments.description, randomColour));
 					message.delete();
 					result = ['info', `Embedded message by ${message.author.tag} sent...`];
 				} else {
