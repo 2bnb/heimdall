@@ -336,17 +336,24 @@ bot.on('message', message => {
 			// Use: `!embed [title]\n[description]`
 			// Author: Arend
 			case 'embed':
-				let separator = message.content.indexOf('\n') > -1 ? message.content.indexOf('\n') : message.content.length;
-				Object.assign(arguments, {
-					title: message.content.substring(
-						db.commandPrefix.length + arguments.command.length,
-						separator
-					),
-					description: message.content.substring(separator + 1)
-				});
+				if (args[1]) {
+					let separator = message.content.indexOf('\n') > -1 ? message.content.indexOf('\n') : message.content.length;
+					Object.assign(arguments, {
+						title: message.content.substring(
+							db.commandPrefix.length + arguments.command.length,
+							separator
+						),
+						description: message.content.substring(separator + 1)
+					});
 
-				message.channel.send(embed(arguments.title, arguments.description));
-				result = ['info', 'Embedded message sent...'];
+					message.channel.send(embed(arguments.title, arguments.description));
+					message.delete();
+					result = ['info', `Embedded message by ${message.author.tag} sent...`];
+				} else {
+					message.channel.send('You didn\'t give me anything to embed...');
+					result = ['warn', 'Nothing given to embed...'];
+				}
+
 				break;
 		}
 
