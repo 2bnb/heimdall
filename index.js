@@ -96,7 +96,7 @@ function notify(message, channel = 'log') {
 		channelId = db.channelIds['testing'];
 	}
 
-	bot.channels.get(channelId).send(message);
+	bot.channels.cache.get(channelId).send(message);
 	return {
 		'error': 0,
 		'content': 'Notification sent! Have a nice day.'
