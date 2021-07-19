@@ -2,12 +2,14 @@ const {Client, MessageEmbed} = require('discord.js');
 const {exec, spawn} = require('child_process');
 const http = require('http');
 const fs = require('fs');
+const he = require('he');
 const parseArgs = require('string-argv').parseArgsStringToArgv;
 
 const config = require('./config.json');
 const db = require('./data.json');
 const serverManagerClasses = require('./modules/index.js');
 let serverManagers = {};
+var ftpTempUserTimeout = undefined;
 
 
 // Register each of the server modules into the object for automated referencing
@@ -204,6 +206,31 @@ function helpFormat(command, roles) {
 	return result;
 }
 
+function ftpUserChangePassword(user) {
+	let newPassword = Date.now() + 'Trainee!';
+
+	let xmlOutput = fs.readFileSync(config.serverEnvironments.filezilla.path, 'utf8');
+	let passIdentifier = 'Name="Pass">';
+	let saltIdentifier = 'Name="Salt">';
+
+	let userIndex = xmlOutput.indexOf(`<User Name="${user}">`);
+
+	let beginPassword = xmlOutput.indexOf(passIdentifier, userIndex) + passIdentifier.length;
+	let endPassword = xmlOutput.indexOf('</', beginPassword);
+
+	let beginSalt = xmlOutput.indexOf(saltIdentifier, userIndex) + saltIdentifier.length;
+	let endSalt = xmlOutput.indexOf('</', beginSalt);
+	let salt = xmlOutput.substring(beginSalt, endSalt);
+
+	let newXML = xmlOutput.substring(0, beginPassword)
+		+ require('crypto').createHash('sha512').update(he.decode(salt) + newPassword).digest('hex').toUpperCase()
+		+ xmlOutput.substring(endPassword);
+
+	fs.writeFileSync(config.serverEnvironments.filezilla.path, newXML);
+
+	return newPassword;
+}
+
 
 /////////////////////////////
 // Execute action commands //
@@ -388,16 +415,17 @@ bot.on('message', message => {
 						user: args[1]
 					});
 
-					let xmlOutput = fs.readFileSync(config.serverEnvironments.filezilla.path, 'utf8');
-					let passIdentifier = 'Name="Pass">';
-					let beginPassword = xmlOutput.indexOf(passIdentifier, xmlOutput.indexOf('<User Name="MMTrainee">')) + passIdentifier.length;
-					let endPassword = xmlOutput.indexOf('</', beginPassword);
-					let newPassword = Date.now() + 'Trainee!';
-					let newXML = xmlOutput.substring(0, beginPassword)
-						+ require('crypto').createHash('md5').update(newPassword).digest('hex')
-						+ xmlOutput.substring(endPassword);
-					console.log(require('crypto').createHash('md5').update(newPassword).digest('hex'), newPassword);
-					fs.writeFileSync(config.serverEnvironments.filezilla.path, newXML);
+					let newPassword = ftpUserChangePassword('MMTrainee');
+
+					if (ftpTempUserTimeout !== undefined) {
+						clearTimeout(ftpTempUserTimeout);
+					}
+
+					ftpTempUserTimeout = setTimeout(() => {
+						ftpUserChangePassword('MMTrainee');
+						action(message, 'refresh_ftp');
+					}, 10800000); // 3 hours
+
 					message.channel.send(action(message, 'refresh_ftp'));
 					message.author.send('FTP connection details for the trainee are: \
 						\n\t*Server Address:* `2bnb.eu` \
