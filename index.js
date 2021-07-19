@@ -408,16 +408,34 @@ bot.on('message', message => {
 					result = ['info', 'Status sent...'];
 					break;
 
-				case 'create-temp-ftp-password':
+				// Command: !get-new-password
+				// Description: Sets a new temporary password for the trainee
+				// account used for the mission maker qualification
+				// Use: `!get-new-password [@user]`
+				// Author: Arend
+				case 'get-new-password':
 					if (!hasMissionMakerRole) { break; }
 
 					Object.assign(arguments, {
-						user: args[1]
+						user: message.mentions.users.first()
 					});
+					let resultMessage = `Temporary FTP password created for the "MMTrainee" account.`;
 
 					let newPassword = ftpUserChangePassword('MMTrainee');
+					let privateMessage = 'FTP connection details for the trainee are: \
+						\n\t*Server Address:* `2bnb.eu` \
+						\n\t*Account Name:* `MMTrainee` \
+						\n\t*Account Password:* `' + newPassword +  '`';
+
+					message.channel.send(action(message, 'refresh_ftp'));
+					message.author.send(privateMessage);
+
+					if (arguments.user !== undefined) {
+						arguments.user.send(privateMessage);
+					}
 
 					if (ftpTempUserTimeout !== undefined) {
+						resultMessage = `Temporary FTP password created for the "MMTrainee" account, and previously scheduled reset timer restarted.`;
 						clearTimeout(ftpTempUserTimeout);
 					}
 
@@ -426,12 +444,7 @@ bot.on('message', message => {
 						action(message, 'refresh_ftp');
 					}, 10800000); // 3 hours
 
-					message.channel.send(action(message, 'refresh_ftp'));
-					message.author.send('FTP connection details for the trainee are: \
-						\n\t*Server Address:* `2bnb.eu` \
-						\n\t*Account Name:* `MMTrainee` \
-						\n\t*Account Password:* `' + newPassword +  '`');
-					result = ['info', `Temporary FTP password created for the "MMTrainee" account.`];
+					result = ['info', resultMessage];
 					break;
 			}
 
