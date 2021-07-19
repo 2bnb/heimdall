@@ -223,7 +223,7 @@ function ftpUserChangePassword(user) {
 	let salt = xmlOutput.substring(beginSalt, endSalt);
 
 	let newXML = xmlOutput.substring(0, beginPassword)
-		+ require('crypto').createHash('sha512').update(he.decode(salt) + newPassword).digest('hex').toUpperCase()
+		+ require('crypto').createHash('sha512').update(newPassword + he.decode(salt)).digest('hex').toUpperCase()
 		+ xmlOutput.substring(endPassword);
 
 	fs.writeFileSync(config.serverEnvironments.filezilla.path, newXML);
