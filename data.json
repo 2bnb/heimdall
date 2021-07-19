@@ -8,7 +8,8 @@
 			"embed": "Ask Heimdall to embed something for you. Anything before a newline is the title, and after it is the description.\nUse: `!embed [title]\n[description]`"
 		},
 		"member": {
-			"status": "Check the status of the Arma 3 servers.\nUse: `!status`"
+			"status": "Check the status of the Arma 3 servers.\nUse: `!status`",
+			"create-temp-ftp-password": "Create a temporary FTP password for use with the FTP \"MMTrainee\" account. The password will be send to the person executing this command.\nUse: `!create-temp-ftp-password`"
 		},
 		"nco": {
 			"run": "Execute a particular command configured on the server.\nUse: `!start [command_preset]`",
@@ -23,7 +24,8 @@
 		"member": "541739531821383691",
 		"nco": "684153326283128963",
 		"command": "532684379206451201",
-		"serverDev": "696099513118490664"
+		"serverDev": "696099513118490664",
+		"missionMaker": "537975003245838355"
 	},
 	"pongs": ["Pong!", "Whoosh!", "Ouch!"],
 	"channelIds": {

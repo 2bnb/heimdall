@@ -1,6 +1,7 @@
 const {Client, MessageEmbed} = require('discord.js');
 const {exec, spawn} = require('child_process');
 const http = require('http');
+const fs = require('fs');
 const parseArgs = require('string-argv').parseArgsStringToArgv;
 
 const config = require('./config.json');
@@ -283,6 +284,7 @@ bot.on('message', message => {
 		let hasNcoRole = message.member.roles.cache.has(db.roleIds.nco);
 		let hasServerDevRole = message.member.roles.cache.has(db.roleIds.serverDev)
 		let hasMemberRole = message.member.roles.cache.has(db.roleIds.member);
+		let hasMissionMakerRole = message.member.roles.cache.has(db.roleIds.missionMaker);
 		let args = getArgs(message.content);
 		let arguments = { command: args[0] };
 		let result = [];
@@ -377,6 +379,31 @@ bot.on('message', message => {
 						files: config.serverStatusURLs
 					});
 					result = ['info', 'Status sent...'];
+					break;
+
+				case 'create-temp-ftp-password':
+					if (!hasMissionMakerRole) { break; }
+
+					Object.assign(arguments, {
+						user: args[1]
+					});
+
+					let xmlOutput = fs.readFileSync(config.serverEnvironments.filezilla.path, 'utf8');
+					let passIdentifier = 'Name="Pass">';
+					let beginPassword = xmlOutput.indexOf(passIdentifier, xmlOutput.indexOf('<User Name="MMTrainee">')) + passIdentifier.length;
+					let endPassword = xmlOutput.indexOf('</', beginPassword);
+					let newPassword = Date.now() + 'Trainee!';
+					let newXML = xmlOutput.substring(0, beginPassword)
+						+ require('crypto').createHash('md5').update(newPassword).digest('hex')
+						+ xmlOutput.substring(endPassword);
+					console.log(require('crypto').createHash('md5').update(newPassword).digest('hex'), newPassword);
+					fs.writeFileSync(config.serverEnvironments.filezilla.path, newXML);
+					message.channel.send(action(message, 'refresh_ftp'));
+					message.author.send('FTP connection details for the trainee are: \
+						\n\t*Server Address:* `2bnb.eu` \
+						\n\t*Account Name:* `MMTrainee` \
+						\n\t*Account Password:* `' + newPassword +  '`');
+					result = ['info', `Temporary FTP password created for the "MMTrainee" account.`];
 					break;
 			}
 
