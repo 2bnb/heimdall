@@ -417,22 +417,47 @@ bot.on('message', message => {
 					if (!hasMissionMakerRole) { break; }
 
 					Object.assign(arguments, {
-						user: message.mentions.users.first()
+						members: message.mentions.members
 					});
 					let resultMessage = `Temporary FTP password created for the "MMTrainee" account.`;
 
 					let newPassword = ftpUserChangePassword('MMTrainee');
-					let privateMessage = 'FTP connection details for the trainee are: \
+					let privateMessage = 'Temporary Trainee FTP connection details are: \
 						\n\t*Server Address:* `2bnb.eu` \
 						\n\t*Account Name:* `MMTrainee` \
-						\n\t*Account Password:* `' + newPassword +  '`';
+						\n\t*Account Password:* `' + newPassword +  '` \
+						\n> These will automatically reset in 3 hours. You will receive a permanent account after completing your Mission Maker Qualification.';
 
-					message.channel.send(action(message, 'refresh_ftp'));
-					message.author.send(privateMessage);
+					let channelMessage = action(message, 'refresh_ftp')
+						.replace(
+							'Action has been executed.',
+							'Members have been sent a direct message with temporary FTP login details. These will reset in 3 hours.'
+						);
 
-					if (arguments.user !== undefined) {
-						arguments.user.send(privateMessage);
+					if (arguments.members.first() !== undefined) {
+						let [allowedUsers, notAllowedUsers] = arguments.members.partition(member => {
+							console.log( member.roles.cache.some(role => role.name === 'Member'));
+							return member.roles.cache.some(role => role.name === 'Member');
+						});
+						console.log(allowedUsers.first());
+						console.log(notAllowedUsers.first());
+						// Can send PM (is member)
+						allowedUsers.each(member => {
+							member.user.send(privateMessage);
+						});
+
+						// Can't send (Not Member)
+						if (notAllowedUsers.first() !== undefined) {
+							channelMessage += '\n> Some mentioned users do not have permission to receive FTP access: \n>\t';
+							notAllowedUsers.each(member => {
+								channelMessage += '<@' + member.user.id + '> ';
+							});
+						}
+					} else {
+						message.author.send(privateMessage);
 					}
+
+					message.channel.send(channelMessage);
 
 					if (ftpTempUserTimeout !== undefined) {
 						resultMessage = `Temporary FTP password created for the "MMTrainee" account, and previously scheduled reset timer restarted.`;

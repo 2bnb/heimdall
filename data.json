@@ -9,7 +9,7 @@
 		},
 		"member": {
 			"status": "Check the status of the Arma 3 servers.\nUse: `!status`",
-			"create-temp-ftp-password": "Create a temporary FTP password for use with the FTP \"MMTrainee\" account. The password will be send to the person executing this command.\nUse: `!create-temp-ftp-password`"
+			"get-new-password": "Create a temporary FTP password for use with the FTP \"MMTrainee\" account. The password will be sent to all users mentioned in this command, then they'll each receive temporary login details.\nUse: `!get-new-password [@member] [@member...]`"
 		},
 		"nco": {
 			"run": "Execute a particular command configured on the server.\nUse: `!start [command_preset]`",
