@@ -20,4 +20,4 @@ Once the above requirements have been installed:
 Follow [this tutorial](https://www.digitaltrends.com/gaming/how-to-make-a-discord-bot/) for how to add Heimdall to your Discord Server.
 
 ## Contact
-For any questions, contact Arend or Ford on the 2nd Battalion, Nord Brigade [Discord](https://discord.gg/DRaWNyf).
+For any questions, contact Arend or Ford on the 2nd Battalion, Nord Brigade [Discord](https://discord.gg/rUUsCShkzJ).
